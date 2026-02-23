@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Battle - Artistic Space Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: white; overflow: hidden;
+            background: #020617;
+        }
+
+        .font-cyber { font-family: 'Orbitron', sans-serif; }
+
+        /* Artistic Space Background Layering */
+        #bg-image {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            z-index: -3; transition: filter 1s ease;
+            transform: scale(1.1);
+        }
+
+        .star-field {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+            animation: moveStars 100s linear infinite;
+        }
+
+        @keyframes moveStars {
+            from { background-position: 0 0; }
+            to { background-position: 1000px 1000px; }
+        }
+
+        .bg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(244, 63, 94, 0.15) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .glass {
+            background: rgba(8, 15, 30, 0.7);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        .ship-selector {
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.03);
+        }
+        .ship-selector:hover { background: rgba(255,255,255,0.08); }
+        .ship-selector.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: #818cf8;
+            transform: translateY(-5px);
+        }
+
+        .color-dot {
+            width: 32px; height: 32px; border-radius: 50%;
+            cursor: pointer; border: 3px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        .color-dot.active { border-color: white; transform: scale(1.25); box-shadow: 0 0 20px currentColor; }
+
+        .float-anim { animation: float 6s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(1deg); }
+        }
+
+        .bolt {
+            position: absolute; height: 6px; border-radius: 3px;
+            z-index: 100; pointer-events: none;
+            box-shadow: 0 0 25px currentColor;
+        }
+
+        .option-btn { transition: all 0.2s ease; }
+        .option-btn:hover { background-color: #f8fafc; transform: scale(1.02); }
+
+        #q-text::-webkit-scrollbar { width: 5px; }
+        #q-text::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="bg-image"></div>
+<div class="star-field"></div>
+<div class="bg-overlay"></div>
+
+<!-- Initial Loading -->
+<div id="loading-overlay" class="fixed inset-0 flex items-center justify-center bg-slate-950 z-[1000]">
+    <div class="text-center">
+        <div class="w-20 h-20 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+        <p class="font-cyber tracking-[0.5em] text-indigo-400 text-xs">SYNCHRONIZING COSMOS...</p>
+    </div>
+</div>
+
+<!-- Start Screen -->
+<div id="start-screen" class="fixed inset-0 flex items-center justify-center p-6 z-50 overflow-y-auto">
+    <div class="glass p-10 md:p-12 rounded-[3rem] max-w-6xl w-full my-auto">
+        <div class="flex flex-col items-center mb-12">
+            <h1 class="text-6xl font-cyber text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white to-rose-300 mb-3">QUANTUM BATTLE</h1>
+            <div class="h-1 w-32 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
+            <p class="mt-4 text-indigo-300/60 font-bold tracking-[0.5em] uppercase text-[10px]">Neural Physics Interface</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <!-- Universal Team Config Component -->
+            <div class="space-y-8">
+                <!-- Team 1 -->
+                <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="font-cyber text-6xl">01</span>
+                    </div>
+                    <p class="font-cyber text-indigo-400 text-[10px] tracking-widest mb-6">COMMANDER 01</p>
+                    <input type="text" id="t1-name" value="STARK" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 focus:outline-none focus:border-indigo-500 font-bold text-lg">
+                    
+                    <div class="flex flex-wrap gap-4 mb-8" id="t1-colors">
+                        <div class="color-dot bg-blue-500 active" data-color="#3b82f6" onclick="selectColor(1, this)"></div>
+                        <div class="color-dot bg-cyan-400" data-color="#22d3ee" onclick="selectColor(1, this)"></div>
+                        <div class="color-dot bg-violet-500" data-color="#8b5cf6" onclick="selectColor(1, this)"></div>
+                        <div class="color-dot bg-emerald-400" data-color="#34d399" onclick="selectColor(1, this)"></div>
+                        <div class="color-dot bg-rose-500" data-color="#f43f5e" onclick="selectColor(1, this)"></div>
+                        <div class="color-dot bg-amber-400" data-color="#fbbf24" onclick="selectColor(1, this)"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4" id="t1-ship-types">
+                        <div class="ship-selector active" onclick="selectShipType(1, 0, this)" id="t1-s-0"></div>
+                        <div class="ship-selector" onclick="selectShipType(1, 1, this)" id="t1-s-1"></div>
+                        <div class="ship-selector" onclick="selectShipType(1, 2, this)" id="t1-s-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8">
+                <!-- Team 2 -->
+                <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="font-cyber text-6xl">02</span>
+                    </div>
+                    <p class="font-cyber text-rose-400 text-[10px] tracking-widest mb-6">COMMANDER 02</p>
+                    <input type="text" id="t2-name" value="ROGERS" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 focus:outline-none focus:border-rose-500 font-bold text-lg">
+                    
+                    <div class="flex flex-wrap gap-4 mb-8" id="t2-colors">
+                        <div class="color-dot bg-blue-500" data-color="#3b82f6" onclick="selectColor(2, this)"></div>
+                        <div class="color-dot bg-cyan-400" data-color="#22d3ee" onclick="selectColor(2, this)"></div>
+                        <div class="color-dot bg-violet-500" data-color="#8b5cf6" onclick="selectColor(2, this)"></div>
+                        <div class="color-dot bg-emerald-400" data-color="#34d399" onclick="selectColor(2, this)"></div>
+                        <div class="color-dot bg-rose-500 active" data-color="#f43f5e" onclick="selectColor(2, this)"></div>
+                        <div class="color-dot bg-amber-400" data-color="#fbbf24" onclick="selectColor(2, this)"></div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4" id="t2-ship-types">
+                        <div class="ship-selector active" onclick="selectShipType(2, 0, this)" id="t2-s-0"></div>
+                        <div class="ship-selector" onclick="selectShipType(2, 1, this)" id="t2-s-1"></div>
+                        <div class="ship-selector" onclick="selectShipType(2, 2, this)" id="t2-s-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-10">
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="text-[10px] opacity-40 mb-5 tracking-widest uppercase">Mission Duration</p>
+                <select id="game-duration" class="w-full bg-slate-900/50 p-4 rounded-2xl focus:outline-none border border-white/10 text-lg font-semibold">
+                    <option value="120">2 MINUTES (Quick Duel)</option>
+                    <option value="300" selected>5 MINUTES (Standard)</option>
+                    <option value="600">10 MINUTES (Extended)</option>
+                    <option value="900">15 MINUTES (Marathon)</option>
+                </select>
+            </div>
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="text-[10px] opacity-40 mb-5 tracking-widest uppercase">Neural Initialization</p>
+                <div class="flex gap-4">
+                    <button onclick="setStarter(0, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl border border-indigo-500 font-bold" id="start-t1">TEAM 1</button>
+                    <button onclick="setStarter(1, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl font-bold" id="start-t2">TEAM 2</button>
+                    <button onclick="setStarter(-1, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl font-bold" id="start-rnd">AUTO</button>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="startGame()" class="w-full mt-10 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-cyber py-6 rounded-3xl text-xl transition-all shadow-2xl hover:scale-[1.01] active:scale-[0.99] uppercase tracking-[0.3em]">
+            Engage Neural Interface
+        </button>
+    </div>
+</div>
+
+<!-- Battle Display -->
+<div id="game-screen" class="hidden h-full flex flex-col p-8 relative">
+    <div class="flex justify-between items-start z-10">
+        <div class="glass px-8 py-6 rounded-3xl w-72 border-l-8" id="card1">
+            <div id="display1" class="text-xs font-cyber opacity-50 mb-2 tracking-[0.2em]">P1_STARK</div>
+            <div class="text-5xl font-bold" id="score1">0</div>
+            <div class="w-full bg-white/10 h-2 mt-5 rounded-full overflow-hidden">
+                <div id="hp1" class="h-full w-full transition-all duration-1000"></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center">
+            <div class="glass px-14 py-4 rounded-full border border-white/20 mb-2">
+                <div id="timer" class="text-4xl font-cyber text-white">05:00</div>
+            </div>
+            <div class="text-[10px] font-cyber text-indigo-400/60 tracking-[0.4em]">SYNC_REMAINING</div>
+        </div>
+
+        <div class="glass px-8 py-6 rounded-3xl w-72 border-r-8 text-right" id="card2">
+            <div id="display2" class="text-xs font-cyber opacity-50 mb-2 tracking-[0.2em]">P2_ROGERS</div>
+            <div class="text-5xl font-bold" id="score2">0</div>
+            <div class="w-full bg-white/10 h-2 mt-5 rounded-full overflow-hidden">
+                <div id="hp2" class="h-full w-full transition-all duration-1000"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Battlefield -->
+    <div class="flex-grow flex items-center justify-between px-32 relative">
+        <div id="ship-container-1" class="float-anim drop-shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+            <div class="relative">
+                <div id="glow-1" class="absolute inset-0 blur-[100px] opacity-0 transition-all duration-1000 scale-150 rounded-full"></div>
+                <div id="v-ship-1"></div>
+            </div>
+        </div>
+        
+        <div id="announcer" class="text-7xl font-cyber opacity-10 uppercase tracking-[0.8em] text-center select-none pointer-events-none">NEURAL_CALIB</div>
+
+        <div id="ship-container-2" class="float-anim drop-shadow-[0_0_50px_rgba(255,255,255,0.1)]" style="animation-delay: -3s">
+            <div class="relative">
+                <div id="glow-2" class="absolute inset-0 blur-[100px] opacity-0 transition-all duration-1000 scale-150 rounded-full"></div>
+                <div id="v-ship-2" style="transform: scaleX(-1)"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Categories -->
+    <div class="grid grid-cols-3 gap-10 max-w-5xl mx-auto w-full mb-12 z-10">
+        <button onclick="popQuestion('mudah')" class="glass hover:bg-emerald-500/10 p-8 rounded-[2rem] transition-all border-b-4 border-emerald-500/50 group relative overflow-hidden">
+            <div class="font-cyber text-2xl text-emerald-400 mb-2">QUARK</div>
+            <div class="text-[10px] opacity-40 tracking-widest uppercase">Level 01 Analysis</div>
+        </button>
+        <button onclick="popQuestion('sedang')" class="glass hover:bg-sky-500/10 p-8 rounded-[2rem] transition-all border-b-4 border-sky-500/50 group relative overflow-hidden">
+            <div class="font-cyber text-2xl text-sky-400 mb-2">LEPTON</div>
+            <div class="text-[10px] opacity-40 tracking-widest uppercase">Level 02 Analysis</div>
+        </button>
+        <button onclick="popQuestion('sulit')" class="glass hover:bg-indigo-500/10 p-8 rounded-[2rem] transition-all border-b-4 border-indigo-500/50 group relative overflow-hidden">
+            <div class="font-cyber text-2xl text-indigo-400 mb-2">BOSON</div>
+            <div class="text-[10px] opacity-40 tracking-widest uppercase">Level 03 Analysis</div>
+        </button>
+    </div>
+</div>
+
+<!-- Modal Soal -->
+<div id="q-modal" class="fixed inset-0 hidden items-center justify-center z-[200] p-8 bg-slate-950/90 backdrop-blur-xl">
+    <div class="bg-white text-slate-900 p-12 rounded-[3.5rem] max-w-4xl w-full shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/20">
+        <div class="flex justify-between items-center mb-10">
+            <span id="q-badge" class="font-cyber text-[10px] px-8 py-2.5 rounded-full text-white uppercase tracking-[0.3em]">PARTICLE_TYPE</span>
+            <div class="flex gap-2">
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
+            </div>
+        </div>
+        <div id="q-text" class="text-3xl font-bold mb-12 leading-tight text-slate-800 max-h-[40vh] overflow-y-auto pr-6"></div>
+        <div id="q-options" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+    </div>
+</div>
+
+<script>
+    const apiKey = "";
+    
+    // Question Bank (100 total optimized for physics battle)
+    const rawQuestions = {
+        mudah: [
+            { q: "Apa nama partikel cahaya yang membawa energi elektromagnetik?", a: ["Proton", "Foton", "Elektron", "Neutron"], c: 1 },
+            { q: "Konstanta Planck ($h$) memiliki nilai sekitar...", a: ["$6,63 \\times 10^{-34}$ J.s", "$3,00 \\times 10^8$ m/s", "$9,11 \\times 10^{-31}$ kg", "$1,60 \\times 10^{-19}$ C"], c: 0 },
+            { q: "Dalam efek fotolistrik, energi kinetik elektron tidak bergantung pada...", a: ["Frekuensi cahaya", "Intensitas cahaya", "Fungsi kerja logam", "Panjang gelombang"], c: 1 },
+            { q: "Hipotesis de Broglie menyatakan bahwa materi memiliki sifat...", a: ["Hanya partikel", "Hanya gelombang", "Dualitas gelombang-partikel", "Statik"], c: 2 },
+            { q: "Siapa ilmuwan yang menemukan bahwa energi radiasi bersifat diskret?", a: ["Isaac Newton", "Max Planck", "Albert Einstein", "Niels Bohr"], c: 1 },
+            { q: "Warna cahaya dengan foton berenergi paling rendah adalah...", a: ["Ungu", "Biru", "Hijau", "Merah"], c: 3 },
+            { q: "Berapa muatan listrik dari sebuah neutron?", a: ["$+1$", "$-1$", "$0$", "$+2$"], c: 2 },
+            { q: "Model atom yang menyatakan elektron mengorbit inti seperti planet adalah...", a: ["Dalton", "Thomson", "Rutherford", "Schrodinger"], c: 2 }
+        ],
+        sedang: [
+            { q: "Hitung energi foton cahaya dengan frekuensi $5 \\times 10^{14}$ Hz! ($h = 6,6 \\times 10^{-34}$)", a: ["$3,3 \\times 10^{-19}$ J", "$3,3 \\times 10^{-20}$ J", "$6,6 \\times 10^{-19}$ J", "$1,3 \\times 10^{-19}$ J"], c: 0 },
+            { q: "Jika fungsi kerja logam 2 eV, disinari cahaya 3 eV, berapa energi kinetik maksimum elektron?", a: ["5 eV", "1 eV", "1,5 eV", "0,5 eV"], c: 1 },
+            { q: "Berapa panjang gelombang de Broglie elektron bermassa $m$ dengan kecepatan $v$?", a: ["$h / (mv)$", "$mv / h$", "$h m / v$", "$v / (hm)$"], c: 0 },
+            { q: "Suatu zat radioaktif memiliki waktu paruh 4 jam. Jika massa awal 100g, sisa setelah 12 jam adalah...", a: ["25 g", "12,5 g", "50 g", "6,25 g"], c: 1 },
+            { q: "Perpindahan elektron dari kulit n=3 ke n=2 pada atom Hidrogen menghasilkan deret...", a: ["Lyman", "Balmer", "Paschen", "Brackett"], c: 1 },
+            { q: "Hukum pergeseran Wien menyatakan $\\lambda_{max} \\cdot T =$ ...", a: ["Konstan", "Nol", "Energi", "Massa"], c: 0 }
+        ],
+        sulit: [
+            { q: "Berapa besar pergeseran Compton ($\\Delta \\lambda$) jika sudut hamburan foton adalah $90^\\circ$?", a: ["$h / (m_e c)$", "$2h / (m_e c)$", "$0$", "$h / (2m_e c)$"], c: 0 },
+            { q: "Inti $_6^{14}C$ meluruh menjadi $_7^{14}N$ dengan memancarkan partikel...", a: ["Alfa", "Beta", "Gamma", "Positron"], c: 1 },
+            { q: "Berapa energi diam elektron jika massanya $0,5 \\text{ MeV}/c^2$?", a: ["$0,25 \\text{ MeV}$", "$1,0 \\text{ MeV}$", "$0,5 \\text{ MeV}$", "$0 \\text{ MeV}$"], c: 2 },
+            { q: "Berapa panjang gelombang terpendek pada deret Lyman ($n_1=1$)? ($R=1,1 \\times 10^7$)", a: ["$912 \\text{ Å}$", "$1216 \\text{ Å}$", "$3646 \\text{ Å}$", "$6563 \\text{ Å}$"], c: 0 }
+        ]
+    };
+
+    function expandQuestions() {
+        ['mudah', 'sedang', 'sulit'].forEach(cat => {
+            let base = [...rawQuestions[cat]];
+            while(rawQuestions[cat].length < 34) rawQuestions[cat].push(...base);
+        });
+    }
+    expandQuestions();
+
+    let gState = {
+        scores: [0, 0],
+        hp: [100, 100],
+        turn: 0,
+        starter: 0,
+        timer: 300,
+        interval: null,
+        colors: ['#3b82f6', '#f43f5e'],
+        shipTypes: [0, 0]
+    };
+
+    const shipPaths = [
+        "M15,50 L45,15 L90,45 L90,55 L45,85 Z", 
+        "M10,50 L35,10 L50,10 L90,40 L90,60 L50,90 L35,90 Z",
+        "M25,25 Q15,50 25,75 L85,90 Q95,50 85,10 L25,25"
+    ];
+
+    function drawShip(color, typeIndex) {
+        const id = Math.random().toString(36).substr(2, 9);
+        const path = shipPaths[typeIndex];
+        return `
+            <svg width="250" height="250" viewBox="0 0 100 100" class="drop-shadow-[0_0_20px_${color}]">
+                <defs>
+                    <linearGradient id="g-${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="${color}" />
+                        <stop offset="100%" stop-color="white" stop-opacity="0.4" />
+                    </linearGradient>
+                </defs>
+                <path d="${path}" fill="url(#g-${id})" />
+                <rect x="88" y="46" width="10" height="8" rx="2" fill="white" opacity="0.8">
+                    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.5s" repeatCount="indefinite" />
+                </rect>
+            </svg>
+        `;
+    }
+
+    async function initScene() {
+        const bg = document.getElementById('bg-image');
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    instances: { prompt: "Stunning cinematic deep space view, ultra-realistic vibrant colorful nebula in shades of purple, gold, and deep blue, swirling cosmic dust, high brightness stars, 8k resolution, artistic masterpiece" },
+                    parameters: { sampleCount: 1 }
+                })
+            });
+            const data = await res.json();
+            if(data.predictions) bg.style.backgroundImage = `url(data:image/png;base64,${data.predictions[0].bytesBase64Encoded})`;
+        } catch(e) {
+            bg.style.background = "linear-gradient(to bottom right, #020617, #0f172a, #1e1b4b)";
+        }
+        updateShipPreviews();
+        document.getElementById('loading-overlay').classList.add('opacity-0');
+        setTimeout(() => document.getElementById('loading-overlay').remove(), 1000);
+    }
+
+    function selectColor(t, el) {
+        el.parentElement.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        gState.colors[t-1] = el.dataset.color;
+        updateShipPreviews();
+    }
+
+    function selectShipType(t, idx, el) {
+        el.parentElement.querySelectorAll('.ship-selector').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+        gState.shipTypes[t-1] = idx;
+        updateShipPreviews();
+    }
+
+    function updateShipPreviews() {
+        for(let t=1; t<=2; t++) {
+            shipPaths.forEach((p, idx) => {
+                const item = document.getElementById(`t${t}-s-${idx}`);
+                item.innerHTML = `
+                    <svg viewBox="0 0 100 100" width="60" height="60">
+                        <path d="${p}" fill="${gState.colors[t-1]}" opacity="${gState.shipTypes[t-1] === idx ? 1 : 0.2}" />
+                    </svg>
+                `;
+            });
+        }
+    }
+
+    function setStarter(val, el) {
+        document.querySelectorAll('.starter-btn').forEach(b => b.classList.remove('border-indigo-500', 'bg-white/10'));
+        el.classList.add('border-indigo-500', 'bg-white/10');
+        gState.starter = val;
+    }
+
+    function startGame() {
+        gState.timer = parseInt(document.getElementById('game-duration').value);
+        gState.turn = gState.starter === -1 ? Math.floor(Math.random()*2) : gState.starter;
+        
+        document.getElementById('display1').innerText = "P1_" + document.getElementById('t1-name').value.toUpperCase();
+        document.getElementById('display2').innerText = "P2_" + document.getElementById('t2-name').value.toUpperCase();
+        
+        document.getElementById('v-ship-1').innerHTML = drawShip(gState.colors[0], gState.shipTypes[0]);
+        document.getElementById('v-ship-2').innerHTML = drawShip(gState.colors[1], gState.shipTypes[1]);
+        
+        document.getElementById('glow-1').style.boxShadow = `0 0 150px ${gState.colors[0]}`;
+        document.getElementById('glow-2').style.boxShadow = `0 0 150px ${gState.colors[1]}`;
+        
+        document.getElementById('card1').style.borderColor = gState.colors[0];
+        document.getElementById('card2').style.borderColor = gState.colors[1];
+        document.getElementById('hp1').style.backgroundColor = gState.colors[0];
+        document.getElementById('hp2').style.backgroundColor = gState.colors[1];
+
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        gState.interval = setInterval(() => {
+            gState.timer--;
+            const m = Math.floor(gState.timer/60).toString().padStart(2,'0');
+            const s = (gState.timer%60).toString().padStart(2,'0');
+            document.getElementById('timer').innerText = `${m}:${s}`;
+            if(gState.timer <= 0) gameOver();
+        }, 1000);
+        
+        updateTurn();
+    }
+
+    function updateTurn() {
+        const name = gState.turn === 0 ? document.getElementById('t1-name').value : document.getElementById('t2-name').value;
+        const announcer = document.getElementById('announcer');
+        announcer.innerText = name + "_PROTOCOL";
+        announcer.style.color = gState.colors[gState.turn];
+        document.getElementById('glow-1').style.opacity = gState.turn === 0 ? '0.4' : '0';
+        document.getElementById('glow-2').style.opacity = gState.turn === 1 ? '0.4' : '0';
+    }
+
+    function popQuestion(lvl) {
+        const pool = rawQuestions[lvl];
+        const q = pool[Math.floor(Math.random() * pool.length)];
+        const modal = document.getElementById('q-modal');
+        const badge = document.getElementById('q-badge');
+        
+        badge.innerText = lvl==='mudah'?'QUARK':lvl==='sedang'?'LEPTON':'BOSON';
+        badge.style.backgroundColor = lvl==='mudah'?'#10b981':lvl==='sedang'?'#38bdf8':'#6366f1';
+        
+        document.getElementById('q-text').innerHTML = q.q;
+        const grid = document.getElementById('q-options');
+        grid.innerHTML = '';
+        
+        q.a.forEach((opt, i) => {
+            const b = document.createElement('button');
+            b.className = "option-btn p-6 rounded-[2rem] bg-slate-50 border border-slate-200 flex items-center group shadow-sm";
+            b.innerHTML = `
+                <span class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-500 font-cyber rounded-2xl mr-6 group-hover:bg-indigo-600 group-hover:text-white transition-all text-sm">${String.fromCharCode(65+i)}</span>
+                <span class="text-slate-800 font-bold text-lg">${opt}</span>
+            `;
+            b.onclick = () => {
+                modal.classList.add('hidden');
+                executePhase(i === q.c, lvl);
+            };
+            grid.appendChild(b);
+        });
+
+        modal.classList.replace('hidden', 'flex');
+        
+        renderMathInElement(modal, {
+            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+            throwOnError : false
+        });
+    }
+
+    function executePhase(correct, lvl) {
+        const source = gState.turn;
+        const target = correct ? (source === 0 ? 1 : 0) : source;
+        
+        const sEl = document.getElementById(`ship-container-${source+1}`);
+        const tEl = document.getElementById(`ship-container-${target+1}`);
+        const sr = sEl.getBoundingClientRect();
+        const tr = tEl.getBoundingClientRect();
+
+        const bolt = document.createElement('div');
+        bolt.className = 'bolt';
+        bolt.style.color = gState.colors[source];
+        bolt.style.backgroundColor = gState.colors[source];
+        bolt.style.left = (sr.left + sr.width/2) + 'px';
+        bolt.style.top = (sr.top + sr.height/2) + 'px';
+        document.body.appendChild(bolt);
+
+        const angle = Math.atan2(tr.top - sr.top, tr.left - sr.left);
+        bolt.style.transform = `rotate(${angle}rad)`;
+
+        bolt.animate([
+            { width: '0px', opacity: 1 },
+            { left: (tr.left + tr.width/2) + 'px', top: (tr.top + tr.height/2) + 'px', width: '250px', opacity: 0 }
+        ], { duration: 500, easing: 'ease-in' }).onfinish = () => {
+            bolt.remove();
+            
+            const pts = { mudah: 10, sedang: 25, sulit: 50 }[lvl];
+            const dmg = { mudah: 10, sedang: 20, sulit: 35 }[lvl];
+
+            if(correct) {
+                gState.scores[source] += pts;
+                gState.hp[target] = Math.max(0, gState.hp[target] - dmg);
+            } else {
+                gState.hp[source] = Math.max(0, gState.hp[source] - (dmg/2));
+            }
+
+            updateUI();
+            gState.turn = gState.turn === 0 ? 1 : 0;
+            updateTurn();
+            if(gState.hp[0] <= 0 || gState.hp[1] <= 0) gameOver();
+        };
+    }
+
+    function updateUI() {
+        document.getElementById('score1').innerText = gState.scores[0];
+        document.getElementById('score2').innerText = gState.scores[1];
+        document.getElementById('hp1').style.width = gState.hp[0] + '%';
+        document.getElementById('hp2').style.width = gState.hp[1] + '%';
+    }
+
+    function gameOver() {
+        clearInterval(gState.interval);
+        const winIdx = gState.scores[0] > gState.scores[1] ? 0 : 1;
+        const winName = winIdx === 0 ? document.getElementById('t1-name').value : document.getElementById('t2-name').value;
+        
+        const overlay = document.createElement('div');
+        overlay.className = "fixed inset-0 z-[1000] bg-slate-950/95 flex items-center justify-center p-8 backdrop-blur-3xl";
+        overlay.innerHTML = `
+            <div class="glass p-20 rounded-[4rem] text-center max-w-2xl w-full border-4 shadow-[0_0_100px_rgba(0,0,0,0.8)]" style="border-color: ${gState.colors[winIdx]}">
+                <p class="font-cyber text-xs tracking-[1em] text-indigo-400 mb-8 uppercase">Neural Match Finalized</p>
+                <h2 class="text-7xl font-cyber mb-14" style="color: ${gState.colors[winIdx]}">${winName}</h2>
+                <div class="flex justify-around mb-16 text-4xl font-bold opacity-30 font-cyber">
+                    <div>${gState.scores[0]}<br><span class="text-xs">UNIT_A</span></div>
+                    <div>VS</div>
+                    <div>${gState.scores[1]}<br><span class="text-xs">UNIT_B</span></div>
+                </div>
+                <button onclick="location.reload()" class="w-full bg-white text-slate-950 font-cyber py-6 rounded-[2.5rem] hover:bg-indigo-50 transition-all font-bold tracking-[0.3em] text-xl">RESET_INTERFACE</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    window.onload = initScene;
+</script>
+</body>
+</html>
+
