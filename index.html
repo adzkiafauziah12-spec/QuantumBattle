@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Battle - Final Physics Master</title>
+    <title>Quantum Battle - High Physics Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- KaTeX -->
@@ -18,354 +18,342 @@
             margin: 0; padding: 0; height: 100vh;
             font-family: 'Inter', sans-serif;
             color: white; overflow: hidden;
-            background: #020617;
+            background: #02040a;
         }
 
         .font-cyber { font-family: 'Orbitron', sans-serif; }
 
+        /* Estetik Starfield Background */
         #bg-image {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-size: cover; background-position: center;
-            z-index: -3; transition: filter 1s ease;
-            transform: scale(1.1);
+            z-index: -3; transition: filter 1.5s ease;
         }
 
-        .star-field {
+        .stars-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -2;
-            background: transparent url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
-            animation: moveStars 120s linear infinite;
+            z-index: -2; overflow: hidden;
         }
 
-        @keyframes moveStars {
-            from { background-position: 0 0; }
-            to { background-position: 1000px 1000px; }
+        .star {
+            position: absolute; background: white; border-radius: 50%;
+            opacity: 0.5; animation: twinkle var(--d) infinite ease-in-out;
         }
 
-        .bg-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.2) 0%, rgba(2, 6, 23, 0.8) 100%);
-            z-index: -1;
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
 
         .glass {
-            background: rgba(8, 15, 30, 0.75);
-            backdrop-filter: blur(25px);
+            background: rgba(10, 15, 25, 0.75);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .ship-selector {
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            border-radius: 1.5rem;
-            padding: 0.8rem;
-            background: rgba(255,255,255,0.03);
-        }
-        .ship-selector.active {
-            background: rgba(99, 102, 241, 0.2);
-            border-color: #818cf8;
-            transform: scale(1.05);
-        }
-
         .color-dot {
-            width: 30px; height: 30px; border-radius: 50%;
+            width: 35px; height: 35px; border-radius: 50%;
             cursor: pointer; border: 3px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .color-dot.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 15px currentColor; }
+        .color-dot.active { border-color: white; transform: scale(1.2) translateY(-3px); box-shadow: 0 5px 15px currentColor; }
 
-        .float-anim { animation: float 6s ease-in-out infinite; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-25px) rotate(1.5deg); }
+        /* Animation for Battle */
+        .ship-float-1 { animation: float1 5s ease-in-out infinite; }
+        .ship-float-2 { animation: float2 5s ease-in-out infinite; }
+
+        @keyframes float1 {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            50% { transform: translateY(-15px) translateX(10px) rotate(1deg); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            50% { transform: translateY(15px) translateX(-10px) rotate(-1deg); }
         }
 
-        .bolt {
+        .beam {
             position: absolute; height: 4px; border-radius: 2px;
-            z-index: 100; pointer-events: none;
+            z-index: 50; pointer-events: none;
             box-shadow: 0 0 20px currentColor;
         }
 
-        .option-btn { transition: all 0.2s ease; text-align: left; }
-        .option-btn:hover { background-color: #f1f5f9; transform: translateX(5px); }
-        
+        .option-btn {
+            background: rgba(240, 245, 255, 1);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-btn:hover { background: #f8fafc; transform: translateX(5px); border-color: #6366f1; }
+
         #q-text::-webkit-scrollbar { width: 4px; }
-        #q-text::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 10px; }
+        #q-text::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div id="bg-image"></div>
-<div class="star-field"></div>
-<div class="bg-overlay"></div>
+<div class="stars-container" id="stars"></div>
 
-<!-- Initial Loading -->
+<!-- Loading -->
 <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center bg-slate-950 z-[1000]">
     <div class="text-center">
-        <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-        <p class="font-cyber tracking-[0.4em] text-indigo-400 text-xs">PREPARING COSMIC ENGINE...</p>
+        <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="font-cyber tracking-[0.4em] text-indigo-400 text-[10px]">INITIALIZING QUANTUM SPACE...</p>
     </div>
 </div>
 
 <!-- Start Screen -->
 <div id="start-screen" class="fixed inset-0 flex items-center justify-center p-6 z-50 overflow-y-auto">
-    <div class="glass p-10 md:p-12 rounded-[3.5rem] max-w-5xl w-full my-auto shadow-2xl">
-        <div class="text-center mb-10">
-            <h1 class="text-5xl font-cyber text-white tracking-tighter mb-2">QUANTUM BATTLE</h1>
-            <p class="text-indigo-400 font-bold tracking-[0.4em] uppercase text-[10px]">Physics Mastery Edition</p>
+    <div class="glass p-12 rounded-[3.5rem] max-w-5xl w-full my-auto shadow-2xl border border-white/5">
+        <div class="text-center mb-12">
+            <h1 class="text-6xl font-cyber bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500 tracking-tighter">QUANTUM BATTLE</h1>
+            <p class="text-indigo-400 font-bold tracking-[0.5em] uppercase text-[10px] mt-4">Physics Warfare Simulator</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Tim 1 -->
-            <div class="bg-white/5 p-8 rounded-3xl border border-white/10">
-                <p class="font-cyber text-indigo-400 text-[10px] tracking-widest mb-4">COMMANDER 01</p>
-                <input type="text" id="t1-name" value="ALFA" class="w-full bg-white/10 p-3 rounded-xl mb-6 focus:outline-none focus:ring-1 ring-indigo-500 font-bold">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Team 1 -->
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="font-cyber text-blue-400 text-[10px] tracking-widest mb-6">UNIT ALPHA CONFIG</p>
+                <input type="text" id="t1-name" value="COMMANDER 1" class="w-full bg-slate-900/50 border border-white/10 p-4 rounded-2xl mb-6 focus:outline-none focus:border-blue-500 font-bold">
                 
-                <p class="text-[9px] opacity-40 mb-3 tracking-widest uppercase">Signature Color</p>
-                <div class="flex flex-wrap gap-3 mb-6" id="t1-colors">
+                <p class="text-[9px] opacity-40 mb-4 tracking-widest uppercase">Select Signature Color</p>
+                <div class="flex flex-wrap gap-4" id="t1-colors">
                     <div class="color-dot bg-blue-500 active" data-color="#3b82f6" onclick="selectColor(1, this)"></div>
                     <div class="color-dot bg-cyan-400" data-color="#22d3ee" onclick="selectColor(1, this)"></div>
-                    <div class="color-dot bg-violet-500" data-color="#8b5cf6" onclick="selectColor(1, this)"></div>
+                    <div class="color-dot bg-indigo-500" data-color="#6366f1" onclick="selectColor(1, this)"></div>
                     <div class="color-dot bg-emerald-400" data-color="#34d399" onclick="selectColor(1, this)"></div>
                     <div class="color-dot bg-rose-500" data-color="#f43f5e" onclick="selectColor(1, this)"></div>
-                    <div class="color-dot bg-amber-400" data-color="#fbbf24" onclick="selectColor(1, this)"></div>
-                </div>
-                
-                <div class="grid grid-cols-3 gap-2" id="t1-ship-types">
-                    <div class="ship-selector active" onclick="selectShipType(1, 0, this)" id="t1-s-0"></div>
-                    <div class="ship-selector" onclick="selectShipType(1, 1, this)" id="t1-s-1"></div>
-                    <div class="ship-selector" onclick="selectShipType(1, 2, this)" id="t1-s-2"></div>
+                    <div class="color-dot bg-orange-400" data-color="#fb923c" onclick="selectColor(1, this)"></div>
                 </div>
             </div>
 
-            <!-- Tim 2 -->
-            <div class="bg-white/5 p-8 rounded-3xl border border-white/10">
-                <p class="font-cyber text-rose-400 text-[10px] tracking-widest mb-4">COMMANDER 02</p>
-                <input type="text" id="t2-name" value="OMEGA" class="w-full bg-white/10 p-3 rounded-xl mb-6 focus:outline-none focus:ring-1 ring-rose-500 font-bold">
+            <!-- Team 2 -->
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="font-cyber text-rose-400 text-[10px] tracking-widest mb-6">UNIT OMEGA CONFIG</p>
+                <input type="text" id="t2-name" value="COMMANDER 2" class="w-full bg-slate-900/50 border border-white/10 p-4 rounded-2xl mb-6 focus:outline-none focus:border-rose-500 font-bold">
                 
-                <p class="text-[9px] opacity-40 mb-3 tracking-widest uppercase">Signature Color</p>
-                <div class="flex flex-wrap gap-3 mb-6" id="t2-colors">
+                <p class="text-[9px] opacity-40 mb-4 tracking-widest uppercase">Select Signature Color</p>
+                <div class="flex flex-wrap gap-4" id="t2-colors">
                     <div class="color-dot bg-blue-500" data-color="#3b82f6" onclick="selectColor(2, this)"></div>
                     <div class="color-dot bg-cyan-400" data-color="#22d3ee" onclick="selectColor(2, this)"></div>
-                    <div class="color-dot bg-violet-500" data-color="#8b5cf6" onclick="selectColor(2, this)"></div>
+                    <div class="color-dot bg-indigo-500" data-color="#6366f1" onclick="selectColor(2, this)"></div>
                     <div class="color-dot bg-emerald-400" data-color="#34d399" onclick="selectColor(2, this)"></div>
                     <div class="color-dot bg-rose-500 active" data-color="#f43f5e" onclick="selectColor(2, this)"></div>
-                    <div class="color-dot bg-amber-400" data-color="#fbbf24" onclick="selectColor(2, this)"></div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2" id="t2-ship-types">
-                    <div class="ship-selector active" onclick="selectShipType(2, 0, this)" id="t2-s-0"></div>
-                    <div class="ship-selector" onclick="selectShipType(2, 1, this)" id="t2-s-1"></div>
-                    <div class="ship-selector" onclick="selectShipType(2, 2, this)" id="t2-s-2"></div>
+                    <div class="color-dot bg-orange-400" data-color="#fb923c" onclick="selectColor(2, this)"></div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
-                <p class="text-[9px] opacity-40 mb-3 tracking-widest uppercase">Mission Duration</p>
-                <select id="game-duration" class="w-full bg-slate-900 p-3 rounded-xl focus:outline-none border border-white/10">
-                    <option value="300" selected>5 MINUTES (Standard)</option>
-                    <option value="600">10 MINUTES (Campaign)</option>
-                    <option value="900">15 MINUTES (Warfare)</option>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-10">
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="text-[9px] opacity-40 mb-4 tracking-widest uppercase">Mission Duration</p>
+                <select id="game-duration" class="w-full bg-slate-900 p-4 rounded-2xl focus:outline-none border border-white/10">
+                    <option value="300" selected>5 MINUTES</option>
+                    <option value="600">10 MINUTES</option>
+                    <option value="900">15 MINUTES</option>
                 </select>
             </div>
-            <div class="bg-white/5 p-6 rounded-3xl border border-white/10">
-                <p class="text-[9px] opacity-40 mb-3 tracking-widest uppercase">Turn Sequence</p>
-                <div class="flex gap-2">
-                    <button onclick="setStarter(0, this)" class="starter-btn flex-1 bg-white/5 p-3 rounded-xl border border-indigo-500" id="start-t1">TEAM 1</button>
-                    <button onclick="setStarter(1, this)" class="starter-btn flex-1 bg-white/5 p-3 rounded-xl" id="start-t2">TEAM 2</button>
-                    <button onclick="setStarter(-1, this)" class="starter-btn flex-1 bg-white/5 p-3 rounded-xl" id="start-rnd">RANDOM</button>
+            <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10">
+                <p class="text-[9px] opacity-40 mb-4 tracking-widest uppercase">Starting Protocol</p>
+                <div class="flex gap-4">
+                    <button onclick="setStarter(0, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl border border-indigo-500 font-bold" id="start-t1">TEAM 1</button>
+                    <button onclick="setStarter(1, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl font-bold" id="start-t2">TEAM 2</button>
+                    <button onclick="setStarter(-1, this)" class="starter-btn flex-1 bg-white/5 p-4 rounded-2xl font-bold" id="start-rnd">AUTO</button>
                 </div>
             </div>
         </div>
 
-        <button onclick="startGame()" class="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-cyber py-5 rounded-2xl text-lg transition-all shadow-xl uppercase tracking-[0.2em]">
-            Initialize Simulation
+        <button onclick="startGame()" class="w-full mt-10 bg-indigo-600 hover:bg-indigo-500 text-white font-cyber py-6 rounded-3xl text-xl transition-all shadow-2xl tracking-[0.4em] uppercase">
+            Deploy Units
         </button>
     </div>
 </div>
 
-<!-- Game UI -->
-<div id="game-screen" class="hidden h-full flex flex-col p-8">
-    <div class="flex justify-between items-start z-10">
-        <div class="glass px-8 py-6 rounded-3xl w-72 border-l-8" id="card1">
-            <div id="display1" class="text-[10px] font-cyber opacity-50 mb-1 tracking-widest">COMMANDER 01</div>
-            <div class="text-5xl font-bold" id="score1">0</div>
+<!-- Battle Arena -->
+<div id="game-screen" class="hidden h-full flex flex-col p-8 relative">
+    <!-- UI Header -->
+    <div class="flex justify-between items-start z-20">
+        <div class="glass px-8 py-5 rounded-3xl w-72 border-l-8" id="card1">
+            <div id="name1" class="text-[10px] font-cyber opacity-40 mb-1">UNIT_01</div>
+            <div class="text-4xl font-bold" id="score1">0</div>
             <div class="w-full bg-white/10 h-2 mt-4 rounded-full overflow-hidden">
                 <div id="hp1" class="h-full w-full transition-all duration-1000"></div>
             </div>
         </div>
 
         <div class="flex flex-col items-center">
-            <div class="glass px-12 py-3 rounded-full border border-white/20 mb-1">
-                <div id="timer" class="text-4xl font-cyber text-white">05:00</div>
+            <div class="glass px-10 py-3 rounded-full border border-white/20 mb-1">
+                <div id="timer" class="text-3xl font-cyber text-white">05:00</div>
             </div>
-            <div class="text-[8px] font-cyber text-indigo-400 opacity-50 tracking-[0.4em]">TIME_STAMP</div>
+            <div class="text-[8px] font-cyber text-indigo-400 tracking-[0.5em] uppercase">Battle Clock</div>
         </div>
 
-        <div class="glass px-8 py-6 rounded-3xl w-72 border-r-8 text-right" id="card2">
-            <div id="display2" class="text-[10px] font-cyber opacity-50 mb-1 tracking-widest">COMMANDER 02</div>
-            <div class="text-5xl font-bold" id="score2">0</div>
+        <div class="glass px-8 py-5 rounded-3xl w-72 border-r-8 text-right" id="card2">
+            <div id="name2" class="text-[10px] font-cyber opacity-40 mb-1">UNIT_02</div>
+            <div class="text-4xl font-bold" id="score2">0</div>
             <div class="w-full bg-white/10 h-2 mt-4 rounded-full overflow-hidden">
                 <div id="hp2" class="h-full w-full transition-all duration-1000"></div>
             </div>
         </div>
     </div>
 
-    <!-- Battlefield -->
-    <div class="flex-grow flex items-center justify-between px-32 relative">
-        <div id="ship-container-1" class="float-anim">
-            <div class="relative">
-                <div id="glow-1" class="absolute inset-0 blur-[80px] opacity-0 transition-opacity duration-1000 rounded-full scale-150"></div>
-                <div id="v-ship-1"></div>
+    <!-- Center Battlefield -->
+    <div class="flex-grow relative flex items-center justify-center pointer-events-none">
+        <!-- Frame Container for Ships -->
+        <div class="flex items-center justify-center gap-24 md:gap-40 z-10">
+            <!-- Ship 1 -->
+            <div id="container-1" class="ship-float-1 transition-all duration-700">
+                <div class="relative">
+                    <div id="glow-1" class="absolute inset-0 blur-[80px] opacity-20 scale-150 rounded-full"></div>
+                    <div id="v-ship-1"></div>
+                </div>
+            </div>
+
+            <!-- Ship 2 -->
+            <div id="container-2" class="ship-float-2 transition-all duration-700">
+                <div class="relative">
+                    <div id="glow-2" class="absolute inset-0 blur-[80px] opacity-20 scale-150 rounded-full"></div>
+                    <div id="v-ship-2" style="transform: scaleX(-1)"></div>
+                </div>
             </div>
         </div>
         
-        <div id="announcer" class="text-5xl font-cyber opacity-10 uppercase tracking-[0.6em] text-center pointer-events-none select-none">SCANNING_TARGET</div>
-
-        <div id="ship-container-2" class="float-anim" style="animation-delay: -3s">
-            <div class="relative">
-                <div id="glow-2" class="absolute inset-0 blur-[80px] opacity-0 transition-opacity duration-1000 rounded-full scale-150"></div>
-                <div id="v-ship-2" style="transform: scaleX(-1)"></div>
-            </div>
-        </div>
+        <!-- Background Decor -->
+        <div id="status-text" class="absolute text-5xl font-cyber opacity-5 uppercase tracking-[1em] text-center select-none">READY</div>
     </div>
 
-    <!-- Categories -->
-    <div class="grid grid-cols-3 gap-8 max-w-5xl mx-auto w-full mb-10 z-10">
-        <button onclick="popQuestion('mudah')" class="glass hover:bg-emerald-500/10 p-7 rounded-[2.5rem] transition-all border-b-4 border-emerald-500 group">
-            <div class="font-cyber text-xl text-emerald-400">CONCEPT</div>
-            <div class="text-[9px] opacity-40 tracking-widest mt-1">THEORY (10 PTS)</div>
+    <!-- Strategy Selection -->
+    <div class="grid grid-cols-3 gap-8 max-w-4xl mx-auto w-full mb-8 z-20">
+        <button onclick="popQuestion('mudah')" class="glass hover:bg-emerald-500/10 p-6 rounded-[2rem] transition-all border-b-4 border-emerald-500/50 group">
+            <div class="font-cyber text-xl text-emerald-400 group-hover:scale-105 transition-transform">THEORY</div>
+            <div class="text-[9px] opacity-40 tracking-widest mt-1">10 PTS | EASY</div>
         </button>
-        <button onclick="popQuestion('sedang')" class="glass hover:bg-sky-500/10 p-7 rounded-[2.5rem] transition-all border-b-4 border-sky-400 group">
-            <div class="font-cyber text-xl text-sky-400">VECTOR</div>
-            <div class="text-[9px] opacity-40 tracking-widest mt-1">BASIC CALC (25 PTS)</div>
+        <button onclick="popQuestion('sedang')" class="glass hover:bg-sky-500/10 p-6 rounded-[2rem] transition-all border-b-4 border-sky-400/50 group">
+            <div class="font-cyber text-xl text-sky-400 group-hover:scale-105 transition-transform">PRACTICE</div>
+            <div class="text-[9px] opacity-40 tracking-widest mt-1">25 PTS | MID</div>
         </button>
-        <button onclick="popQuestion('sulit')" class="glass hover:bg-indigo-500/10 p-7 rounded-[2.5rem] transition-all border-b-4 border-indigo-500 group">
-            <div class="font-cyber text-xl text-indigo-400">QUANTUM</div>
-            <div class="text-[9px] opacity-40 tracking-widest mt-1">ADVANCED (50 PTS)</div>
+        <button onclick="popQuestion('sulit')" class="glass hover:bg-indigo-500/10 p-6 rounded-[2rem] transition-all border-b-4 border-indigo-500/50 group">
+            <div class="font-cyber text-xl text-indigo-400 group-hover:scale-105 transition-transform">MASTERY</div>
+            <div class="text-[9px] opacity-40 tracking-widest mt-1">50 PTS | HARD</div>
         </button>
     </div>
 </div>
 
-<!-- Modal Soal -->
-<div id="q-modal" class="fixed inset-0 hidden items-center justify-center z-[200] p-6 bg-slate-950/90 backdrop-blur-xl">
-    <div class="bg-white text-slate-900 p-10 rounded-[3.5rem] max-w-4xl w-full shadow-2xl relative border border-white/20">
-        <div class="flex justify-between items-center mb-8">
-            <span id="q-badge" class="font-cyber text-[9px] px-8 py-2 rounded-full text-white uppercase tracking-widest">MODULE</span>
-            <div class="flex gap-1.5">
-                <div class="w-2 h-2 rounded-full bg-slate-200"></div>
-                <div class="w-2 h-2 rounded-full bg-slate-200"></div>
-                <div class="w-2 h-2 rounded-full bg-slate-200"></div>
+<!-- Question Modal -->
+<div id="q-modal" class="fixed inset-0 hidden items-center justify-center z-[200] p-8 bg-slate-950/90 backdrop-blur-xl">
+    <div class="bg-white text-slate-900 p-12 rounded-[3.5rem] max-w-4xl w-full border border-white/20">
+        <div class="flex justify-between items-center mb-10">
+            <span id="q-badge" class="font-cyber text-[10px] px-8 py-2.5 rounded-full text-white uppercase tracking-[0.3em]">ANALYSIS</span>
+            <div class="flex gap-2">
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
+                <div class="w-3 h-3 rounded-full bg-slate-200"></div>
             </div>
         </div>
-        <div id="q-text" class="text-2xl font-bold mb-10 leading-relaxed max-h-[40vh] overflow-y-auto pr-6 text-slate-800"></div>
-        <div id="q-options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="q-text" class="text-3xl font-bold mb-12 leading-tight text-slate-800 max-h-[40vh] overflow-y-auto pr-4"></div>
+        <div id="q-options" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
     </div>
 </div>
 
 <script>
     const apiKey = "";
-    
-    // Comprehensive Bank Soal (30 per level)
-    const questionBank = {
+
+    // 90 Comprehensive Questions (Indonesian SMA Physics)
+    const questions = {
         mudah: [
-            { q: "Siapakah ilmuwan yang mengemukakan bahwa energi cahaya bersifat terkuantisasi (diskret)?", a: ["Isaac Newton", "Max Planck", "James Maxwell", "Christian Huygens"], c: 1 },
-            { q: "Partikel penyusun inti atom adalah...", a: ["Proton dan Elektron", "Elektron dan Neutron", "Proton dan Neutron", "Foton dan Elektron"], c: 2 },
-            { q: "Fenomena terlepasnya elektron dari permukaan logam saat disinari cahaya disebut...", a: ["Efek Compton", "Efek Doppler", "Efek Fotolistrik", "Radiasi Benda Hitam"], c: 2 },
-            { q: "Warna cahaya tampak yang memiliki panjang gelombang ($\lambda$) paling besar adalah...", a: ["Biru", "Ungu", "Kuning", "Merah"], c: 3 },
-            { q: "Sinar yang tidak bermuatan listrik dan memiliki daya tembus paling kuat adalah...", a: ["Sinar Alfa", "Sinar Beta", "Sinar Gamma", "Sinar-X"], c: 2 },
-            { q: "Model atom yang menyatakan atom terdiri dari inti bermuatan positif dan elektron pada lintasan stasioner adalah...", a: ["Dalton", "Thomson", "Rutherford", "Bohr"], c: 3 },
-            { q: "Waktu yang diperlukan oleh zat radioaktif untuk meluruh menjadi setengah dari massa awalnya disebut...", a: ["Waktu sisa", "Waktu paruh", "Waktu reaksi", "Waktu fana"], c: 1 },
-            { q: "Konstanta Planck ($h$) dinyatakan dalam satuan...", a: ["Joule/sekon", "Joule.sekon", "Watt/meter", "Newton.meter"], c: 1 },
-            { q: "Energi foton berbanding lurus dengan...", a: ["Panjang gelombang", "Periode", "Frekuensi", "Amplitudo"], c: 2 },
-            { q: "Menurut hukum pergeseran Wien, jika suhu benda hitam naik, maka panjang gelombang radiasi maksimumnya akan...", a: ["Makin pendek", "Makin panjang", "Tetap", "Menjadi nol"], c: 0 },
-            { q: "Partikel Alfa identik dengan inti atom...", a: ["Hidrogen", "Helium", "Lithium", "Karbon"], c: 1 },
-            { q: "Efek Compton membuktikan bahwa cahaya memiliki sifat...", a: ["Gelombang", "Partikel", "Stasioner", "Kontinu"], c: 1 },
-            { q: "Zat yang memancarkan radiasi secara spontan disebut...", a: ["Konduktor", "Isolator", "Zat Radioaktif", "Zat Reaktif"], c: 2 },
-            { q: "Postulat Einstein menyatakan bahwa kecepatan cahaya di ruang hampa bersifat...", a: ["Relatif", "Berubah", "Mutlak/Konstan", "Tergantung pengamat"], c: 2 },
-            { q: "Alat yang digunakan untuk mendeteksi radiasi dengan prinsip ionisasi gas adalah...", a: ["Spektrometer", "Teleskop", "Pencacah Geiger-Muller", "Elektroskop"], c: 2 },
-            { q: "Emisivitas benda hitam sempurna bernilai...", a: ["0", "0,5", "1", "100"], c: 2 },
-            { q: "Hipotesis de Broglie menyatakan bahwa materi yang bergerak memiliki sifat...", a: ["Massa", "Gelombang", "Energi", "Muatan"], c: 1 },
-            { q: "Deret spektrum atom hidrogen yang terletak pada daerah cahaya tampak adalah...", a: ["Lyman", "Balmer", "Paschen", "Brackett"], c: 1 },
-            { q: "Jumlah proton dalam atom $_6^{14}C$ adalah...", a: ["6", "8", "14", "20"], c: 0 },
-            { q: "Peluruhan sinar Beta menghasilkan perubahan pada...", a: ["Massa atom", "Nomor atom", "Jumlah neutron saja", "Warna inti"], c: 1 },
-            { q: "Foton adalah kuanta dari medan...", a: ["Gravitasi", "Magnet", "Elektromagnetik", "Nuklir kuat"], c: 2 },
-            { q: "Siapa yang menemukan keberadaan neutron?", a: ["Ernest Rutherford", "James Chadwick", "J.J. Thomson", "Niels Bohr"], c: 1 },
-            { q: "Prinsip ketidakpastian dikemukakan oleh...", a: ["Schrodinger", "Heisenberg", "Einstein", "Planck"], c: 1 },
-            { q: "Satuan energi yang sering digunakan dalam fisika atom adalah...", a: ["Watt", "Newton", "Electron Volt (eV)", "Pascal"], c: 2 },
-            { q: "Warna biru pada bintang menunjukkan bahwa bintang tersebut...", a: ["Lebih dingin", "Lebih panas", "Lebih tua", "Lebih kecil"], c: 1 },
-            { q: "Spektrum atom hidrogen bersifat...", a: ["Kontinu", "Garis/Diskrit", "Gelap", "Acak"], c: 1 },
-            { q: "Massa diam elektron adalah sekitar...", a: ["$1,6 \times 10^{-19}$ kg", "$9,1 \times 10^{-31}$ kg", "$1,67 \times 10^{-27}$ kg", "$3 \times 10^8$ kg"], c: 1 },
-            { q: "Reaksi penggabungan dua inti ringan menjadi inti yang lebih berat disebut...", a: ["Fisi", "Fusi", "Ionisasi", "Peluruhan"], c: 1 },
-            { q: "Sinar katode sebenarnya adalah aliran...", a: ["Proton", "Neutron", "Elektron", "Foton"], c: 2 },
-            { q: "Energi ikat inti berasal dari...", a: ["Kecepatan elektron", "Defek massa", "Gaya gravitasi", "Suhu inti"], c: 1 }
+            { q: "Partikel penyusun inti atom adalah...", a: ["Proton & Elektron", "Proton & Neutron", "Neutron & Elektron", "Foton & Proton"], c: 1 },
+            { q: "Siapa ilmuwan yang menemukan elektron melalui percobaan sinar katode?", a: ["Ernest Rutherford", "Niels Bohr", "J.J. Thomson", "John Dalton"], c: 2 },
+            { q: "Cahaya tampak dengan frekuensi paling rendah adalah warna...", a: ["Ungu", "Biru", "Kuning", "Merah"], c: 3 },
+            { q: "Benda hitam sempurna memiliki koefisien emisivitas sebesar...", a: ["0", "1", "0,5", "Infinite"], c: 1 },
+            { q: "Satuan energi dalam skala atom yang setara dengan $1,6 \\times 10^{-19}$ Joule adalah...", a: ["Watt", "Electron Volt (eV)", "Newton", "Coulomb"], c: 1 },
+            { q: "Efek fotolistrik membuktikan bahwa cahaya bersifat sebagai...", a: ["Gelombang", "Partikel", "Statis", "Magnet"], c: 1 },
+            { q: "Menurut Hukum Pergeseran Wien, jika suhu benda naik, panjang gelombang maksimum akan...", a: ["Bertambah", "Tetap", "Berkurang", "Nol"], c: 2 },
+            { q: "Alat yang digunakan untuk mendeteksi radiasi zat radioaktif adalah...", a: ["Spektrometer", "Pencacah Geiger-Muller", "Termometer", "Barometer"], c: 1 },
+            { q: "Sinar radioaktif yang tidak bermassa dan tidak bermuatan adalah...", a: ["Sinar Alfa", "Sinar Beta", "Sinar Gamma", "Sinar-X"], c: 2 },
+            { q: "Waktu yang diperlukan zat radioaktif untuk meluruh menjadi separuh dari jumlah semula adalah...", a: ["Waktu reaksi", "Waktu paruh", "Waktu sisa", "Waktu fana"], c: 1 },
+            { q: "Model atom yang menyatakan elektron berada pada lintasan stasioner adalah...", a: ["Thomson", "Bohr", "Rutherford", "Dalton"], c: 1 },
+            { q: "Foton adalah paket energi radiasi yang nilainya sebanding dengan...", a: ["Massa", "Kecepatan", "Frekuensi", "Muatan"], c: 2 },
+            { q: "Dualitas gelombang-partikel dicetuskan pertama kali oleh...", a: ["Albert Einstein", "Louis de Broglie", "Max Planck", "Heisenberg"], c: 1 },
+            { q: "Konstanta Planck ($h$) memiliki satuan...", a: ["Joule/sekon", "Joule.sekon", "Newton.meter", "Watt/meter"], c: 1 },
+            { q: "Proses bergabungnya dua inti ringan menjadi inti yang lebih berat disebut...", a: ["Fisi", "Fusi", "Ionisasi", "Eksitasi"], c: 1 },
+            { q: "Partikel yang massanya sama dengan elektron tetapi bermuatan positif disebut...", a: ["Proton", "Positron", "Neutron", "Quark"], c: 1 },
+            { q: "Intensitas radiasi benda hitam sebanding dengan suhu mutlak pangkat...", a: ["1", "2", "3", "4"], c: 3 },
+            { q: "Lampu LED memancarkan cahaya melalui proses...", a: ["Pijar", "Emisi Foton", "Fisi", "Pembakaran"], c: 1 },
+            { q: "Deret spektrum atom hidrogen yang berada pada daerah ultraviolet adalah...", a: ["Lyman", "Balmer", "Paschen", "Brackett"], c: 0 },
+            { q: "Sinar alfa merupakan inti dari atom...", a: ["Hidrogen", "Helium", "Lithium", "Karbon"], c: 1 },
+            { q: "Percobaan hamburan sinar alfa oleh Rutherford membuktikan adanya...", a: ["Elektron", "Neutron", "Inti atom", "Orbit lingkaran"], c: 2 },
+            { q: "Peristiwa terlepasnya elektron dari permukaan logam saat disinari cahaya disebut...", a: ["Efek Compton", "Efek Fotolistrik", "Produksi Pasangan", "Difraksi"], c: 1 },
+            { q: "Siapakah yang menyatakan bahwa lintasan elektron tidak bisa ditentukan secara pasti?", a: ["Bohr", "Heisenberg", "Newton", "Thomson"], c: 1 },
+            { q: "Zat radioaktif yang digunakan untuk merunut fungsi kelenjar tiroid adalah...", a: ["Karbon-14", "Iodium-131", "Cobalt-60", "Uranium-235"], c: 1 },
+            { q: "Besarnya energi minimal untuk melepaskan elektron dari permukaan logam disebut...", a: ["Energi Kinetik", "Energi Potensial", "Fungsi Kerja", "Energi Ionisasi"], c: 2 },
+            { q: "Prinsip kerja panel surya memanfaatkan fenomena...", a: ["Fisi nuklir", "Efek fotolistrik", "Efek termionik", "Konduksi"], c: 1 },
+            { q: "Partikel pembawa gaya elektromagnetik adalah...", a: ["Gluon", "Graviton", "Foton", "W-Boson"], c: 2 },
+            { q: "Peluruhan sinar beta menghasilkan emisi partikel berupa...", a: ["Helium", "Elektron/Positron", "Gelombang EM", "Proton"], c: 1 },
+            { q: "Sifat gelombang dari elektron dapat ditunjukkan melalui peristiwa...", a: ["Difraksi", "Hamburan", "Ionisasi", "Pijar"], c: 0 },
+            { q: "Radioisotop yang digunakan untuk mengukur umur fosil adalah...", a: ["Iodium-131", "Karbon-14", "Cobalt-60", "Fosfor-32"], c: 1 }
         ],
         sedang: [
-            { q: "Berapa energi foton cahaya yang memiliki frekuensi $5 \times 10^{14}$ Hz? ($h = 6,6 \times 10^{-34}$ J.s)", a: ["$3,3 \times 10^{-19}$ J", "$3,3 \times 10^{-20}$ J", "$1,3 \times 10^{-19}$ J", "$6,6 \times 10^{-19}$ J"], c: 0 },
-            { q: "Sebuah logam memiliki fungsi kerja 2,1 eV. Jika disinari cahaya berenergi 3,5 eV, energi kinetik maks elektron adalah...", a: ["5,6 eV", "1,4 eV", "2,1 eV", "0,7 eV"], c: 1 },
-            { q: "Panjang gelombang de Broglie dari elektron ($m = 9 \times 10^{-31}$ kg) yang bergerak dengan kecepatan $2 \times 10^6$ m/s adalah...", a: ["$3,6 \times 10^{-10}$ m", "$7,2 \times 10^{-10}$ m", "$1,8 \times 10^{-10}$ m", "$0,3 \times 10^{-10}$ m"], c: 0 },
-            { q: "Suatu zat radioaktif memiliki waktu paruh 10 hari. Jika massa awal 100 gram, massa sisa setelah 30 hari adalah...", a: ["50 g", "25 g", "12,5 g", "6,25 g"], c: 2 },
-            { q: "Panjang gelombang maksimum radiasi benda hitam pada suhu 2000 K adalah... ($C = 2,9 \times 10^{-3}$ m.K)", a: ["$1,45 \times 10^{-6}$ m", "$5,8 \times 10^{-6}$ m", "$0,7 \times 10^{-6}$ m", "$2,9 \times 10^{-6}$ m"], c: 0 },
-            { q: "Jika sebuah benda bergerak dengan kecepatan $0,6c$, maka faktor Lorentz ($\gamma$) adalah...", a: ["1,25", "1,67", "0,8", "1,0"], c: 0 },
-            { q: "Massa suatu benda saat diam adalah 10 kg. Berapa massa kinetiknya jika bergerak dengan $0,8c$?", a: ["12,5 kg", "16,7 kg", "8 kg", "20 kg"], c: 1 },
-            { q: "Berapa momentum foton dengan panjang gelombang 660 nm? ($h = 6,6 \times 10^{-34}$)", a: ["$10^{-27}$ kg.m/s", "$10^{-28}$ kg.m/s", "$4,3 \times 10^{-27}$ kg.m/s", "$10^{-19}$ kg.m/s"], c: 0 },
-            { q: "Energi diam sebuah partikel adalah $E_0$. Jika energi totalnya $2E_0$, kecepatannya adalah...", a: ["$0,5c$", "$0,866c$", "$0,707c$", "$0,9c$"], c: 1 },
-            { q: "Defek massa pembentukan inti $_2^4He$ adalah 0,030 sma. Jika 1 sma = 931 MeV, energi ikat intinya adalah...", a: ["27,93 MeV", "93,1 MeV", "9,31 MeV", "31,0 MeV"], c: 0 },
-            { q: "Frekuensi ambang suatu logam adalah $4 \times 10^{14}$ Hz. Fungsi kerja logam tersebut adalah...", a: ["$2,64 \times 10^{-19}$ J", "$1,65 \times 10^{-19}$ J", "$4,0 \times 10^{-19}$ J", "$6,6 \times 10^{-34}$ J"], c: 0 },
-            { q: "Berapa jumlah neutron dalam nuklida $_{38}^{90}Sr$?", a: ["38", "90", "52", "128"], c: 2 },
-            { q: "Sebuah roket panjangnya 100 m. Jika diamati pengamat diam saat roket bergerak $0,8c$, panjangnya menjadi...", a: ["60 m", "80 m", "125 m", "166 m"], c: 0 },
-            { q: "Suhu permukaan benda hitam A adalah 300 K dan benda B adalah 600 K. Perbandingan daya radiasi A dan B adalah...", a: ["1 : 2", "1 : 4", "1 : 16", "1 : 8"], c: 2 },
-            { q: "Potensial penghenti elektron adalah 3 V. Berapa energi kinetik maksimum elektron tersebut?", a: ["1 eV", "3 eV", "1,5 eV", "4,8 eV"], c: 1 },
-            { q: "Panjang gelombang cahaya yang energinya 4 eV adalah... ($hc = 1240$ eV.nm)", a: ["310 nm", "496 nm", "620 nm", "124 nm"], c: 0 },
-            { q: "Aktivitas radioaktif berkurang menjadi 25% dalam 4 jam. Waktu paruhnya adalah...", a: ["1 jam", "2 jam", "4 jam", "8 jam"], c: 1 },
-            { q: "Berapa jari-jari lintasan Bohr ke-2 jika $a_0 = 0,53$ Å?", a: ["1,06 Å", "2,12 Å", "0,26 Å", "4,24 Å"], c: 1 },
-            { q: "Inti atom $_{92}^{238}U$ memancarkan partikel alfa. Inti baru yang terbentuk memiliki nomor massa...", a: ["238", "236", "234", "242"], c: 2 },
-            { q: "Konversi energi 1 sma setara dengan...", a: ["93,1 MeV", "931 MeV", "1,6 MeV", "0,511 MeV"], c: 1 },
-            { q: "Laju peluruhan radioaktif 80 Ci. Setelah 3 kali waktu paruh, aktivitasnya menjadi...", a: ["40 Ci", "20 Ci", "10 Ci", "5 Ci"], c: 2 },
-            { q: "Energi kinetik elektron pada orbit Bohr n=1 adalah $-13,6$ eV. Berapa energi pada n=2?", a: ["$-27,2$ eV", "$-6,8$ eV", "$-3,4$ eV", "$-1,5$ eV"], c: 2 },
-            { q: "Sebuah foton berenergi 2 MeV. Berapa energinya dalam Joule?", a: ["$3,2 \times 10^{-13}$ J", "$1,6 \times 10^{-13}$ J", "$3,2 \times 10^{-19}$ J", "$6,4 \times 10^{-15}$ J"], c: 0 },
-            { q: "Jarak antara dua bintang menurut pengamat di bumi 4 tahun cahaya. Menurut pesawat $0,6c$ jaraknya adalah...", a: ["2,4 tc", "3,2 tc", "5,0 tc", "4,0 tc"], c: 1 },
-            { q: "Beda panjang gelombang Compton pada sudut $180^\circ$ adalah... ($h/mc = 2,4 \times 10^{-12}$ m)", a: ["$2,4 \times 10^{-12}$ m", "$4,8 \times 10^{-12}$ m", "$0$", "$1,2 \times 10^{-12}$ m"], c: 1 },
-            { q: "Massa total inti $_2^4He$ adalah 4,002 sma. Massa 2p+2n adalah 4,032 sma. Defek massanya adalah...", a: ["0,030 sma", "0,015 sma", "0,002 sma", "0,060 sma"], c: 0 },
-            { q: "Frekuensi cahaya biru adalah $6 \times 10^{14}$ Hz. Berapa periodenya?", a: ["$1,6 \times 10^{-15}$ s", "$0,6 \times 10^{-14}$ s", "$6 \times 10^{14}$ s", "$3 \times 10^{-8}$ s"], c: 0 },
-            { q: "Energi total sebuah partikel 1,25 kali energi diamnya. Maka $\beta = v/c$ adalah...", a: ["0,5", "0,6", "0,8", "0,75"], c: 1 },
-            { q: "Berapa energi radiasi yang dipancarkan benda hitam ($e=1, A=100 \text{ cm}^2, T=1000 \text{ K}$) dalam 1 detik? ($\sigma = 5,67 \times 10^{-8}$)", a: ["567 W", "56,7 W", "5,67 W", "5670 W"], c: 0 },
-            { q: "Tentukan $\Delta \lambda$ jika sudut hamburan Compton $60^\circ$! ($h/mc = 0,024$ Å)", a: ["0,012 Å", "0,024 Å", "0,048 Å", "0,006 Å"], c: 0 }
+            { q: "Energi satu foton cahaya dengan frekuensi $6 \\times 10^{14}$ Hz adalah... ($h = 6,6 \\times 10^{-34}$ J.s)", a: ["$3,96 \\times 10^{-19}$ J", "$3,96 \\times 10^{-20}$ J", "$6,60 \\times 10^{-19}$ J", "$1,10 \\times 10^{-19}$ J"], c: 0 },
+            { q: "Logam memiliki fungsi kerja 2,1 eV. Jika disinari cahaya berenergi 3,5 eV, maka $E_k$ maks elektron...", a: ["5,6 eV", "1,4 eV", "1,75 eV", "0,7 eV"], c: 1 },
+            { q: "Hitung panjang gelombang de Broglie elektron yang bergerak dengan $v = 10^6$ m/s! ($m = 9 \\times 10^{-31}$ kg)", a: ["$7,33 \\times 10^{-10}$ m", "$6,63 \\times 10^{-10}$ m", "$3,30 \\times 10^{-10}$ m", "$9,10 \\times 10^{-10}$ m"], c: 0 },
+            { q: "Suatu zat radioaktif memiliki waktu paruh 20 hari. Sisa zat setelah 60 hari adalah...", a: ["1/4 bagian", "1/8 bagian", "1/16 bagian", "1/2 bagian"], c: 1 },
+            { q: "Daya radiasi benda hitam bersuhu 2000 K jika luas 1 $cm^2$ adalah... ($\\sigma = 5,67 \\times 10^{-8}$)", a: ["9,07 Watt", "90,7 Watt", "0,9 Watt", "907 Watt"], c: 1 },
+            { q: "Massa diam elektron 0,5 MeV. Berapa energi total elektron saat bergerak dengan $v = 0,6c$?", a: ["0,625 MeV", "0,825 MeV", "0,425 MeV", "1,0 MeV"], c: 0 },
+            { q: "Panjang gelombang maksimum radiasi benda hitam pada suhu 1000 K adalah... ($C = 2,9 \\times 10^{-3}$ mK)", a: ["2,9 $\\mu m$", "29 $\\mu m$", "0,29 $\\mu m$", "290 $\\mu m$"], c: 0 },
+            { q: "Berapakah momentum foton dengan panjang gelombang 660 nm? ($h = 6,6 \\times 10^{-34}$)", a: ["$10^{-27}$ kg.m/s", "$10^{-25}$ kg.m/s", "$4,3 \\times 10^{-27}$ kg.m/s", "$2,1 \\times 10^{-27}$ kg.m/s"], c: 0 },
+            { q: "Energi ikat inti jika defek massa sebesar 0,02 sma adalah... (1 sma = 931 MeV)", a: ["18,62 MeV", "9,31 MeV", "46,55 MeV", "186,2 MeV"], c: 0 },
+            { q: "Foton dengan $\\lambda = 3000 \\text{ Å}$ jatuh pada logam $W_0 = 2 \\text{ eV}$. ($hc = 12400 \\text{ eV.Å}$). $E_k$ adalah...", a: ["2,13 eV", "4,13 eV", "1,13 eV", "0,5 eV"], c: 0 },
+            { q: "Atom Hidrogen bertransisi dari n=3 ke n=2. Berapa energi fotonnya? ($E_n = -13,6/n^2$ eV)", a: ["1,89 eV", "3,40 eV", "1,51 eV", "10,2 eV"], c: 0 },
+            { q: "Berapa frekuensi ambang logam jika fungsi kerjanya 3,3 eV? ($h = 6,6 \\times 10^{-34}$ J.s)", a: ["$8 \\times 10^{14}$ Hz", "$5 \\times 10^{14}$ Hz", "$1,2 \\times 10^{15}$ Hz", "$4 \\times 10^{14}$ Hz"], c: 0 },
+            { q: "Suatu unsur $_Z^A X$ meluruh memancarkan partikel alfa. Unsur baru memiliki massa...", a: ["A-4", "A-2", "A", "A+4"], c: 0 },
+            { q: "Jika intensitas cahaya dalam efek fotolistrik dinaikkan 2 kali lipat, maka...", a: ["$E_k$ naik 2x", "Arus fotolistrik naik 2x", "Potensial henti naik 2x", "Tidak ada perubahan"], c: 1 },
+            { q: "Defek massa inti $_2^4 He$ adalah 0,030 sma. Energi ikat totalnya...", a: ["27,93 MeV", "30,1 MeV", "13,9 MeV", "7,4 MeV"], c: 0 },
+            { q: "Berapa $\\Delta \\lambda$ Compton jika sudut hamburan $180^\\circ$? ($h/mc = 2,4 \\times 10^{-12}$ m)", a: ["$4,8 \\times 10^{-12}$ m", "$2,4 \\times 10^{-12}$ m", "$0$ m", "$1,2 \\times 10^{-12}$ m"], c: 0 },
+            { q: "Sebuah partikel bergerak dengan $v=0,8c$. Perbandingan massa bergerak dengan massa diamnya adalah...", a: ["5 : 3", "3 : 5", "4 : 5", "5 : 4"], c: 0 },
+            { q: "Aktivitas 1 gram radium adalah $1 Ci$. Berapa aktivitas 0,25 gram radium?", a: ["0,25 Ci", "0,5 Ci", "0,75 Ci", "4 Ci"], c: 0 },
+            { q: "Foton berenergi 10 eV menumbuk elektron diam. Jika energi foton hambur 7 eV, $E_k$ elektron adalah...", a: ["3 eV", "17 eV", "70 eV", "0,7 eV"], c: 0 },
+            { q: "Potensial penghenti elektron adalah 2 Volt. Berapakah energi kinetik maksimum fotoelektron?", a: ["2 Joule", "2 eV", "3,2 Joule", "0,5 eV"], c: 1 },
+            { q: "Berapa jari-jari lintasan ke-2 atom Bohr jika jari-jari pertama adalah $0,53 \\text{ Å}$?", a: ["$2,12 \\text{ Å}$", "$1,06 \\text{ Å}$", "$1,59 \\text{ Å}$", "$4,24 \\text{ Å}$"], c: 0 },
+            { q: "Waktu paruh sebuah zat adalah 2 jam. Berapa bagian yang meluruh setelah 4 jam?", a: ["1/4", "3/4", "1/2", "7/8"], c: 1 },
+            { q: "Panjang gelombang terpendek deret Lyman adalah 912 Å. Panjang gelombang terpendek Balmer adalah...", a: ["3648 Å", "1824 Å", "456 Å", "912 Å"], c: 0 },
+            { q: "Energi kinetik elektron yang memiliki panjang gelombang de Broglie $1 \\text{ Å}$ adalah... (pendekatan)", a: ["150 eV", "15 eV", "1500 eV", "1,5 eV"], c: 0 },
+            { q: "Perbandingan panjang gelombang $\\lambda_1$ dan $\\lambda_2$ jika suhu $T_1=300$ K dan $T_2=600$ K adalah...", a: ["2 : 1", "1 : 2", "4 : 1", "1 : 4"], c: 0 },
+            { q: "Sebuah foton cahaya biru ($450$ nm) memiliki momentum $p$. Foton cahaya merah ($900$ nm) memiliki momentum...", a: ["$0,5 p$", "$2 p$", "$p$", "$0,25 p$"], c: 0 },
+            { q: "Berapa suhu benda hitam jika panjang gelombang puncaknya 2,9 $\\mu m$? ($C=2,9 \\times 10^{-3}$)", a: ["1000 K", "100 K", "2900 K", "290 K"], c: 0 },
+            { q: "Berapa persen sisa zat radioaktif setelah melewati 5 kali waktu paruhnya?", a: ["3,125 %", "6,25 %", "12,5 %", "1,5 %"], c: 0 },
+            { q: "Energi ikat per nukleon inti He ($A=4$) dengan energi ikat total 28 MeV adalah...", a: ["7 MeV", "14 MeV", "28 MeV", "112 MeV"], c: 0 },
+            { q: "Berapa massa inti jika defek massanya $0,001$ kg? ($c = 3 \\times 10^8$ m/s)", a: ["$9 \\times 10^{13}$ J", "$3 \\times 10^{10}$ J", "$3 \\times 10^5$ J", "$9 \\times 10^{16}$ J"], c: 0 }
         ],
         sulit: [
-            { q: "Logam disinari cahaya $\lambda = 330$ nm ($hc = 1240$ eV.nm). Jika fungsi kerja 2,25 eV, berapa potensial penghenti?", a: ["1,51 V", "3,76 V", "2,25 V", "0,75 V"], c: 0 },
-            { q: "Sebuah partikel memiliki energi kinetik sama dengan energi diamnya. Berapa kecepatannya?", a: ["$0,5c$", "$0,866c$", "$0,707c$", "$0,94c$"], c: 1 },
-            { q: "Berapa panjang gelombang terpendek pada deret Paschen ($n_1=3$)? ($R = 1,097 \times 10^7 \text{ m}^{-1}$)", a: ["820 nm", "364 nm", "121 nm", "1875 nm"], c: 0 },
-            { q: "Massa diam proton 1,0078 sma, neutron 1,0087 sma. Massa inti $_3^7Li$ adalah 7,0160 sma. Energi ikat per nukleonnya adalah...", a: ["5,6 MeV", "39,2 MeV", "7,1 MeV", "9,3 MeV"], c: 0 },
-            { q: "Pesawat A bergerak ke kanan $0,8c$, pesawat B bergerak ke kiri $0,8c$. Kecepatan B relatif terhadap A adalah...", a: ["$1,6c$", "$0,976c$", "$0,64c$", "$0,8c$"], c: 1 },
-            { q: "Sebuah benda hitam bersuhu $T$ memancarkan daya $P$. Jika suhunya dinaikkan menjadi $1,5T$, dayanya menjadi...", a: ["$1,5 P$", "$2,25 P$", "$5,06 P$", "$3,37 P$"], c: 2 },
-            { q: "Efek Compton: Foton $\lambda = 0,1$ nm menumbuk elektron bebas dan terhambur $90^\circ$. Berapa $\lambda$ foton hambur? ($h/mc = 2,4 \times 10^{-3}$ nm)", a: ["0,1024 nm", "0,0976 nm", "0,1240 nm", "0,1 nm"], c: 0 },
-            { q: "Umur rata-rata partikel saat diam $2 \times 10^{-6}$ s. Jika bergerak dengan $0,96c$ ($\gamma = 3,57$), jarak tempuhnya adalah...", a: ["2142 m", "576 m", "600 m", "1500 m"], c: 0 },
-            { q: "Daya keluaran sebuah laser $\lambda = 660$ nm adalah 3,3 mW. Berapa jumlah foton per detik? ($h = 6,6 \times 10^{-34}$)", a: ["$1,1 \times 10^{16}$", "$1,1 \times 10^{19}$", "$3,3 \times 10^{16}$", "$10^{17}$"], c: 0 },
-            { q: "Dalam reaksi $_{92}^{235}U + _0^1n \to _{56}^{141}Ba + _{36}^{92}Kr + 3 _0^1n$, defek massanya 0,185 sma. Energi yang dihasilkan per reaksi adalah...", a: ["172,2 MeV", "200,5 MeV", "93,1 MeV", "18,5 MeV"], c: 0 },
-            { q: "Momentum sebuah elektron adalah $1,2 \times 10^{-22}$ kg.m/s. Berapa panjang gelombang de Broglie-nya?", a: ["5,5 pm", "5,5 nm", "0,55 Å", "0,11 nm"], c: 0 },
-            { q: "Berapa beda potensial yang diperlukan untuk mempercepat elektron agar $\lambda = 0,1$ nm? ($V = 150 / \lambda^2$ Å)", a: ["15 V", "150 V", "1500 V", "1,5 V"], c: 1 },
-            { q: "Zat radioaktif A ($T_{1/2} = 2$ jam) dan B ($T_{1/2} = 3$ jam) awalnya memiliki massa sama. Perbandingan sisa A:B setelah 6 jam adalah...", a: ["1 : 2", "1 : 4", "2 : 3", "1 : 8"], c: 0 },
-            { q: "Energi total proton 1,5 GeV ($E_0 = 938$ MeV). Momentum kinetiknya dalam satuan MeV/c adalah ($p = \sqrt{E^2 - E_0^2}$)...", a: ["1169 MeV/c", "2438 MeV/c", "562 MeV/c", "938 MeV/c"], c: 0 },
-            { q: "Frekuensi ambang logam A adalah $f_0$. Jika disinari cahaya $2f_0$, $EK_{max}$ adalah $E$. Jika disinari $3f_0$, $EK_{max}$ menjadi...", a: ["$1,5 E$", "$2 E$", "$3 E$", "$4 E$"], c: 1 },
-            { q: "Berapa panjang gelombang terpanjang deret Balmer? ($R = 1,1 \times 10^7 \text{ m}^{-1}$)", a: ["656 nm", "364 nm", "486 nm", "121 nm"], c: 0 },
-            { q: "Sebuah bintang memancarkan daya $4 \times 10^{26}$ W. Jika suhunya 5800 K, berapa jari-jarinya?", a: ["$7 \times 10^8$ m", "$1,4 \times 10^9$ m", "$3 \times 10^7$ m", "$10^6$ m"], c: 0 },
-            { q: "Potensial ionisasi atom hidrogen adalah 13,6 V. Berapa energi yang diperlukan untuk mengeksitasi elektron dari n=1 ke n=3?", a: ["12,1 eV", "10,2 eV", "1,51 eV", "13,6 eV"], c: 0 },
-            { q: "Suatu zat radioaktif meluruh 75% dalam 10 menit. Berapa lama waktu peluruhan 93,75%?", a: ["15 menit", "20 menit", "25 menit", "30 menit"], c: 1 },
-            { q: "Berapa kecepatan elektron yang memiliki panjang gelombang sama dengan foton berenergi 10 keV?", a: ["$0,2c$", "$0,04c$", "$0,1c$", "$0,5c$"], c: 1 },
-            { q: "Tentukan energi foton hambur Compton jika foton datang 0,511 MeV hambur $180^\circ$!", a: ["0,170 MeV", "0,255 MeV", "0,511 MeV", "0,127 MeV"], c: 0 },
-            { q: "Jika ketidakpastian posisi elektron adalah 0,1 nm, berapa ketidakpastian kecepatannya? ($\Delta v \approx h / (m \Delta x)$)", a: ["$7,2 \times 10^5$ m/s", "$1,1 \times 10^6$ m/s", "$5,0 \times 10^4$ m/s", "$10^8$ m/s"], c: 0 },
-            { q: "Volume sebuah kubus menurut pengamat diam adalah $V_0$. Jika kubus bergerak $0,8c$ sejajar salah satu rusuknya, volumenya menjadi...", a: ["$0,6 V_0$", "$0,8 V_0$", "$0,36 V_0$", "$V_0$"], c: 0 },
-            { q: "Sebuah nuklida $_{Z}^{A}X$ meluruh dengan memancarkan 2 partikel alfa dan 1 beta. Nuklida baru memiliki nomor atom...", a: ["Z-3", "Z-4", "Z-2", "Z-5"], c: 0 },
-            { q: "Energi kinetik relativistik partikel adalah 25% dari energi diamnya. Berapa kecepatannya?", a: ["$0,6c$", "$0,5c$", "$0,25c$", "$0,8c$"], c: 0 },
-            { q: "Efisiensi panel surya 20%. Jika intensitas cahaya matahari 1000 W/m$^2$, berapa luas panel untuk menghasilkan 1 kW?", a: ["5 m$^2$", "1 m$^2$", "10 m$^2$", "2 m$^2$"], c: 0 },
-            { q: "Energi foton sinar-X adalah $1,24 \times 10^5$ eV. Berapa frekuensinya? ($h = 4,14 \times 10^{-15}$ eV.s)", a: ["$3 \times 10^{19}$ Hz", "$3 \times 10^{18}$ Hz", "$10^{19}$ Hz", "$6 \times 10^{18}$ Hz"], c: 0 },
-            { q: "Perbandingan massa sisa zat radioaktif setelah 20 hari adalah 1/16. Waktu paruhnya adalah...", a: ["5 hari", "4 hari", "2,5 hari", "10 hari"], c: 0 },
-            { q: "Tingkat energi atom $E_n = -13,6/n^2$ eV. Berapa panjang gelombang foton yang dipancarkan saat transisi n=4 ke n=2?", a: ["486 nm", "656 nm", "121 nm", "1875 nm"], c: 0 },
-            { q: "Berapa massa yang hilang (kg) untuk menghasilkan energi $9 \times 10^{13}$ Joule? ($c = 3 \times 10^8$)", a: ["1 mg", "1 g", "10 mg", "0,1 g"], c: 1 }
+            { q: "Sebuah pesawat ruang angkasa panjangnya 100 m bergerak dengan $0,8c$. Panjang menurut pengamat diam adalah...", a: ["60 m", "80 m", "125 m", "166 m"], c: 0 },
+            { q: "Logam $W_0 = 4 \\text{ eV}$ disinari cahaya $\\lambda = 200 \\text{ nm}$. Potensial penghentinya adalah... ($hc = 1240 \\text{ eV.nm}$)", a: ["2,2 V", "6,2 V", "4,0 V", "1,1 V"], c: 0 },
+            { q: "Dua benda hitam A dan B bersuhu 300 K dan 600 K. Perbandingan daya yang dipancarkan A dan B adalah...", a: ["1 : 16", "1 : 2", "1 : 4", "1 : 8"], c: 0 },
+            { q: "Massa suatu partikel menjadi 2 kali massa diamnya. Berapakah kecepatan partikel tersebut?", a: ["$0,5c \\sqrt{3}$", "$0,5c$", "$0,8c$", "$c \\sqrt{2}$"], c: 0 },
+            { q: "Energi kinetik elektron sebuah atom Hidrogen pada kulit ke-3 adalah...", a: ["1,51 eV", "13,6 eV", "3,40 eV", "0,85 eV"], c: 0 },
+            { q: "Foton dengan energi 1,02 MeV mengalami produksi pasangan. Berapa energi kinetik masing-masing partikel?", a: ["0 MeV", "0,51 MeV", "1,02 MeV", "0,25 MeV"], c: 0 },
+            { q: "Berapa defek massa inti $_{15}^{31} P$ (massa inti=30,97; mp=1,007; mn=1,008)?", a: ["0,277 sma", "0,150 sma", "0,310 sma", "0,031 sma"], c: 0 },
+            { q: "Zat radioaktif A (t1/2=2 jam) dan B (t1/2=4 jam). Rasio Na/Nb setelah 8 jam jika awalnya sama adalah...", a: ["1 : 4", "1 : 2", "1 : 8", "4 : 1"], c: 0 },
+            { q: "Dalam hamburan Compton, foton menumbuk elektron dan terhambur $90^\\circ$. Berapa energi kinetik elektron jika $\\Delta \\lambda = 0,024 \\text{ Å}$?", a: ["Dihitung dari $\\Delta E_{foton}$", "0,51 MeV", "1240 eV", "Tidak bisa ditentukan"], c: 0 },
+            { q: "Berapa kelajuan elektron agar panjang gelombang de Broglie-nya sama dengan $\\lambda$ Compton?", a: ["$c$", "$0,5c$", "$0,1c$", "$0$"], c: 0 },
+            { q: "Sebuah tangki berbentuk kubus volume $V$ menurut pengamat diam. Jika tangki bergerak $0,6c$ searah rusuknya...", a: ["$0,8 V$", "$0,6 V$", "$1,25 V$", "$V$"], c: 0 },
+            { q: "Energi ikat per nukleon Fe-56 adalah 8,8 MeV. Energi ikat totalnya sekitar...", a: ["492 MeV", "56 MeV", "8,8 MeV", "100 MeV"], c: 0 },
+            { q: "Berapa jumlah foton per sekon yang dihasilkan lampu 60W dengan $\\lambda = 660 \\text{ nm}$?", a: ["$2 \\times 10^{20}$", "$6 \\times 10^{19}$", "$2 \\times 10^{18}$", "$4 \\times 10^{21}$"], c: 0 },
+            { q: "Dua benda identik bersuhu 127 C dan 227 C. Berapa perbandingan energi radiasi tiap detiknya?", a: ["256 : 625", "127 : 227", "16 : 25", "2 : 3"], c: 0 },
+            { q: "Peluruhan $_6^{14} C \\to _7^{14} N + X$. Partikel X adalah...", a: ["Elektron (Beta-minus)", "Positron (Beta-plus)", "Alfa", "Gamma"], c: 0 },
+            { q: "Berapa energi minimal foton untuk melakukan produksi pasangan elektron-positron?", a: ["1,02 MeV", "0,51 MeV", "2,04 MeV", "13,6 eV"], c: 0 },
+            { q: "Sebuah kawat pijar 100W bersuhu 2500 K. Jika suhu naik menjadi 3000 K, daya menjadi...", a: ["207 Watt", "144 Watt", "120 Watt", "250 Watt"], c: 0 },
+            { q: "Foton hambur Compton memiliki $\\lambda'$ dua kali $\\lambda$ datang pada sudut $180^\\circ$. Berapa $\\lambda$ datang?", a: ["$2h/mc$", "$h/mc$", "$0,5h/mc$", "$4h/mc$"], c: 0 },
+            { q: "Berapa tegangan yang dibutuhkan mikroskop elektron untuk menghasilkan $\\lambda = 0,1 \\text{ Å}$?", a: ["15000 Volt", "1500 Volt", "150 Volt", "150000 Volt"], c: 0 },
+            { q: "Inti radioaktif meluruh 75% dalam 10 menit. Berapakah waktu paruhnya?", a: ["5 menit", "2,5 menit", "7,5 menit", "10 menit"], c: 0 },
+            { q: "Jarak antara dua bintang 10 tahun cahaya. Waktu tempuh pesawat $0,6c$ menurut astronot adalah...", a: ["13,3 tahun", "16,6 tahun", "8 tahun", "20 tahun"], c: 2 },
+            { q: "Energi total sebuah proton 3 kali energi diamnya. Berapakah momentum linear proton tersebut? ($E_0=m c^2$)", a: ["$2\\sqrt{2} m c$", "$3 m c$", "$\\sqrt{3} m c$", "$2 m c$"], c: 0 },
+            { q: "Satu gram massa dikonversi seluruhnya menjadi energi. Berapa lama energi ini menyalakan lampu 100W?", a: ["28,5 juta tahun", "1000 tahun", "28500 tahun", "1 juta jam"], c: 0 },
+            { q: "Defek massa pembentukan inti Li-7 adalah 0,04 sma. Energi ikat per nukleon adalah...", a: ["5,32 MeV", "37,24 MeV", "9,31 MeV", "7,00 MeV"], c: 0 },
+            { q: "Deret Paschen atom Hidrogen terjadi pada transisi elektron ke kulit n=...", a: ["3", "1", "2", "4"], c: 0 },
+            { q: "Berapa panjang gelombang terpanjang deret Balmer? ($R=1,1 \\times 10^7$)", a: ["$6563 \\text{ Å}$", "$3646 \\text{ Å}$", "$1216 \\text{ Å}$", "$912 \\text{ Å}$"], c: 0 },
+            { q: "Dua partikel A dan B, $m_A = 4m_B$ dan $E_k A = 0,25 E_k B$. Rasio $\\lambda_A / \\lambda_B$ adalah...", a: ["1 : 1", "2 : 1", "1 : 2", "4 : 1"], c: 0 },
+            { q: "Berapa energi yang dilepaskan pada reaksi fisi $_0^1 n + _{92}^{235} U \\to _{56}^{141} Ba + _{36}^{92} Kr + 3 _0^1 n$?", a: ["~200 MeV", "~10 MeV", "~1000 MeV", "~5 MeV"], c: 0 },
+            { q: "Potensial henti 3,3V saat $\\lambda=200$nm dan 0,8V saat $\\lambda=400$nm. Berapa konstanta Planck? (Estimasi)", a: ["$6,6 \\times 10^{-34}$", "$3,3 \\times 10^{-34}$", "$1,1 \\times 10^{-34}$", "$9,1 \\times 10^{-34}$"], c: 0 },
+            { q: "Massa atom $_{11}^{23} Na$ adalah 22,99 sma. Jika massa proton=1,007, neutron=1,008. Energi ikat per nukleon...", a: ["~8 MeV", "~1 MeV", "~20 MeV", "~5 MeV"], c: 0 }
         ]
     };
 
@@ -377,23 +365,69 @@
         timer: 300,
         interval: null,
         colors: ['#3b82f6', '#f43f5e'],
-        shipTypes: [0, 0],
-        answeredCorrectly: { mudah: [], sedang: [], sulit: [] }
+        answeredCorrectly: { mudah: new Set(), sedang: new Set(), sulit: new Set() }
     };
 
-    const shipPaths = [
-        "M15,50 L45,15 L90,45 L90,55 L45,85 Z", 
-        "M10,50 L35,10 L50,10 L90,40 L90,60 L50,90 L35,90 Z",
-        "M25,25 Q15,50 25,75 L85,90 Q95,50 85,10 L25,25"
-    ];
+    // Realistic Space Ship SVG
+    function drawShip(color) {
+        const id = Math.random().toString(36).substr(2, 9);
+        return `
+            <svg width="240" height="180" viewBox="0 0 240 180" class="drop-shadow-[0_0_30px_${color}66]">
+                <defs>
+                    <linearGradient id="body-${id}" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#475569" />
+                        <stop offset="50%" stop-color="#1e293b" />
+                        <stop offset="100%" stop-color="#0f172a" />
+                    </linearGradient>
+                    <linearGradient id="accent-${id}" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="${color}" />
+                        <stop offset="100%" stop-color="white" />
+                    </linearGradient>
+                </defs>
+                <!-- Engine Flames -->
+                <path d="M10,80 Q-20,90 10,100 L30,90 Z" fill="${color}">
+                    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="0.2s" repeatCount="indefinite" />
+                </path>
+                <!-- Main Body -->
+                <path d="M40,60 L180,30 L220,90 L180,150 L40,120 Z" fill="url(#body-${id})" stroke="#334155" stroke-width="2" />
+                <!-- Wing Top -->
+                <path d="M80,65 L160,20 L140,65 Z" fill="#334155" />
+                <!-- Wing Bottom -->
+                <path d="M80,115 L160,160 L140,115 Z" fill="#334155" />
+                <!-- Cockpit -->
+                <path d="M150,75 L190,75 L205,90 L190,105 L150,105 Z" fill="#0ea5e9" opacity="0.6" stroke="white" stroke-width="1" />
+                <!-- Stripes -->
+                <rect x="60" y="85" width="60" height="4" fill="url(#accent-${id})" rx="2" />
+                <rect x="65" y="95" width="40" height="2" fill="url(#accent-${id})" rx="1" opacity="0.5" />
+                <!-- Turret -->
+                <rect x="180" y="88" width="30" height="4" fill="#94a3b8" />
+            </svg>
+        `;
+    }
 
-    async function initScene() {
+    function createStars() {
+        const container = document.getElementById('stars');
+        for(let i=0; i<200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.setProperty('--d', (Math.random() * 3 + 2) + 's');
+            container.appendChild(star);
+        }
+    }
+
+    async function initGalaxy() {
+        createStars();
         const bg = document.getElementById('bg-image');
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    instances: { prompt: "Cinematic ultra-realistic colorful deep space nebula, sharp stars, vibrant purple and blue clouds, galactic core, 8k resolution, artistic space photography" },
+                    instances: { prompt: "Cinematic realistic space background, deep purple and blue nebula with high-detail star clusters, ultra HD, artistic cosmic scene" },
                     parameters: { sampleCount: 1 }
                 })
             });
@@ -402,35 +436,14 @@
         } catch(e) {
             bg.style.background = "linear-gradient(45deg, #020617, #0f172a, #1e1b4b)";
         }
-        updateShipPreviews();
-        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('loading-overlay').classList.add('opacity-0');
+        setTimeout(() => document.getElementById('loading-overlay').remove(), 1000);
     }
 
     function selectColor(t, el) {
         el.parentElement.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
         el.classList.add('active');
         gState.colors[t-1] = el.dataset.color;
-        updateShipPreviews();
-    }
-
-    function selectShipType(t, idx, el) {
-        el.parentElement.querySelectorAll('.ship-selector').forEach(d => d.classList.remove('active'));
-        el.classList.add('active');
-        gState.shipTypes[t-1] = idx;
-        updateShipPreviews();
-    }
-
-    function updateShipPreviews() {
-        for(let t=1; t<=2; t++) {
-            shipPaths.forEach((p, idx) => {
-                const item = document.getElementById(`t${t}-s-${idx}`);
-                item.innerHTML = `
-                    <svg viewBox="0 0 100 100" width="55" height="55">
-                        <path d="${p}" fill="${gState.colors[t-1]}" opacity="${gState.shipTypes[t-1] === idx ? 1 : 0.2}" />
-                    </svg>
-                `;
-            });
-        }
     }
 
     function setStarter(val, el) {
@@ -443,19 +456,19 @@
         gState.timer = parseInt(document.getElementById('game-duration').value);
         gState.turn = gState.starter === -1 ? Math.floor(Math.random()*2) : gState.starter;
         
-        document.getElementById('display1').innerText = document.getElementById('t1-name').value.toUpperCase();
-        document.getElementById('display2').innerText = document.getElementById('t2-name').value.toUpperCase();
+        document.getElementById('name1').innerText = document.getElementById('t1-name').value.toUpperCase();
+        document.getElementById('name2').innerText = document.getElementById('t2-name').value.toUpperCase();
         
-        document.getElementById('v-ship-1').innerHTML = drawShip(gState.colors[0], gState.shipTypes[0]);
-        document.getElementById('v-ship-2').innerHTML = drawShip(gState.colors[1], gState.shipTypes[1]);
-        
-        document.getElementById('glow-1').style.backgroundColor = gState.colors[0];
-        document.getElementById('glow-2').style.backgroundColor = gState.colors[1];
+        document.getElementById('v-ship-1').innerHTML = drawShip(gState.colors[0]);
+        document.getElementById('v-ship-2').innerHTML = drawShip(gState.colors[1]);
         
         document.getElementById('card1').style.borderColor = gState.colors[0];
         document.getElementById('card2').style.borderColor = gState.colors[1];
         document.getElementById('hp1').style.backgroundColor = gState.colors[0];
         document.getElementById('hp2').style.backgroundColor = gState.colors[1];
+        
+        document.getElementById('glow-1').style.backgroundColor = gState.colors[0];
+        document.getElementById('glow-2').style.backgroundColor = gState.colors[1];
 
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
@@ -468,45 +481,43 @@
             if(gState.timer <= 0) gameOver();
         }, 1000);
         
-        updateTurnUI();
+        updateTurn();
     }
 
-    function drawShip(color, typeIndex) {
-        const id = Math.random().toString(36).substr(2, 6);
-        return `
-            <svg width="240" height="240" viewBox="0 0 100 100" class="drop-shadow-[0_0_20px_${color}]">
-                <defs>
-                    <linearGradient id="g-${id}" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="${color}" />
-                        <stop offset="100%" stop-color="white" stop-opacity="0.4" />
-                    </linearGradient>
-                </defs>
-                <path d="${shipPaths[typeIndex]}" fill="url(#g-${id})" />
-                <rect x="88" y="47" width="8" height="6" rx="1" fill="white">
-                    <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite" />
-                </rect>
-            </svg>
-        `;
+    function updateTurn() {
+        const name = gState.turn === 0 ? document.getElementById('t1-name').value : document.getElementById('t2-name').value;
+        const color = gState.colors[gState.turn];
+        document.getElementById('status-text').innerText = name + " IN CONTROL";
+        document.getElementById('status-text').style.color = color;
+        
+        document.getElementById('glow-1').style.opacity = gState.turn === 0 ? '0.3' : '0.05';
+        document.getElementById('glow-2').style.opacity = gState.turn === 1 ? '0.3' : '0.05';
     }
 
     function popQuestion(lvl) {
-        // Filter out already answered questions correctly
-        const availableIdx = [];
-        questionBank[lvl].forEach((q, i) => {
-            if (!gState.answeredCorrectly[lvl].includes(i)) availableIdx.push(i);
-        });
+        const pool = questions[lvl];
+        const answeredIndices = gState.answeredCorrectly[lvl];
+        
+        // Find un-answered questions
+        let available = [];
+        for(let i=0; i<pool.length; i++) {
+            if(!answeredIndices.has(i)) available.push(i);
+        }
 
-        // If all answered correctly, reset bank (rare case for long sessions)
-        const activeIdx = availableIdx.length > 0 ? 
-            availableIdx[Math.floor(Math.random() * availableIdx.length)] : 
-            Math.floor(Math.random() * questionBank[lvl].length);
+        // If all answered, reset the set (rare case for 30 questions)
+        if(available.length === 0) {
+            answeredIndices.clear();
+            available = pool.map((_, i) => i);
+        }
 
-        const q = questionBank[lvl][activeIdx];
+        const qIdx = available[Math.floor(Math.random() * available.length)];
+        const q = pool[qIdx];
+        
         const modal = document.getElementById('q-modal');
         const badge = document.getElementById('q-badge');
         
-        badge.innerText = lvl.toUpperCase();
-        badge.style.backgroundColor = lvl==='mudah'?'#10b981':lvl==='sedang'?'#38bdf8':'#6366f1';
+        badge.innerText = lvl === 'mudah' ? 'QUARK (THEORY)' : lvl === 'sedang' ? 'LEPTON (PRACTICE)' : 'BOSON (MASTERY)';
+        badge.style.backgroundColor = lvl === 'mudah' ? '#10b981' : lvl === 'sedang' ? '#38bdf8' : '#6366f1';
         
         document.getElementById('q-text').innerHTML = q.q;
         const grid = document.getElementById('q-options');
@@ -514,16 +525,14 @@
         
         q.a.forEach((opt, i) => {
             const b = document.createElement('button');
-            b.className = "option-btn p-5 rounded-[1.5rem] bg-slate-50 border border-slate-200 flex items-center group";
+            b.className = "option-btn p-6 rounded-[2rem] flex items-center group shadow-sm text-left";
             b.innerHTML = `
-                <span class="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-400 font-cyber rounded-xl mr-5 group-hover:bg-indigo-600 group-hover:text-white transition-all text-xs">${String.fromCharCode(65+i)}</span>
-                <span class="text-slate-700 font-semibold">${opt}</span>
+                <span class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-500 font-cyber rounded-2xl mr-6 group-hover:bg-indigo-600 group-hover:text-white transition-all text-sm">${String.fromCharCode(65+i)}</span>
+                <span class="text-slate-800 font-bold text-lg">${opt}</span>
             `;
             b.onclick = () => {
                 modal.classList.add('hidden');
-                const isCorrect = i === q.c;
-                if (isCorrect) gState.answeredCorrectly[lvl].push(activeIdx);
-                handleAttack(isCorrect, lvl);
+                handleAttack(i === q.c, lvl, qIdx);
             };
             grid.appendChild(b);
         });
@@ -536,56 +545,58 @@
         });
     }
 
-    function handleAttack(correct, lvl) {
+    function handleAttack(isCorrect, lvl, qIdx) {
         const source = gState.turn;
-        const target = correct ? (source === 0 ? 1 : 0) : source;
+        const target = isCorrect ? (source === 0 ? 1 : 0) : source;
         
-        const pts = { mudah: 10, sedang: 25, sulit: 50 }[lvl];
-        const dmg = { mudah: 10, sedang: 20, sulit: 35 }[lvl];
+        if(isCorrect) gState.answeredCorrectly[lvl].add(qIdx);
 
-        const sEl = document.getElementById(`ship-container-${source+1}`);
-        const tEl = document.getElementById(`ship-container-${target+1}`);
+        const sEl = document.getElementById(`container-${source+1}`);
+        const tEl = document.getElementById(`container-${target+1}`);
         const sr = sEl.getBoundingClientRect();
         const tr = tEl.getBoundingClientRect();
 
-        const bolt = document.createElement('div');
-        bolt.className = 'bolt';
-        bolt.style.color = gState.colors[source];
-        bolt.style.backgroundColor = gState.colors[source];
-        bolt.style.left = (sr.left + sr.width/2) + 'px';
-        bolt.style.top = (sr.top + sr.height/2) + 'px';
-        document.body.appendChild(bolt);
+        const beam = document.createElement('div');
+        beam.className = 'beam';
+        beam.style.color = gState.colors[source];
+        beam.style.backgroundColor = gState.colors[source];
+        beam.style.left = (sr.left + sr.width/2) + 'px';
+        beam.style.top = (sr.top + sr.height/2) + 'px';
+        document.body.appendChild(beam);
 
         const angle = Math.atan2(tr.top - sr.top, tr.left - sr.left);
-        bolt.style.transform = `rotate(${angle}rad)`;
+        beam.style.transform = `rotate(${angle}rad)`;
 
-        bolt.animate([
+        beam.animate([
             { width: '0px', opacity: 1 },
-            { left: (tr.left + tr.width/2) + 'px', top: (tr.top + tr.height/2) + 'px', width: '200px', opacity: 0 }
-        ], { duration: 450, easing: 'ease-in' }).onfinish = () => {
-            bolt.remove();
+            { left: (tr.left + tr.width/2) + 'px', top: (tr.top + tr.height/2) + 'px', width: '300px', opacity: 0 }
+        ], { duration: 400, easing: 'ease-in' }).onfinish = () => {
+            beam.remove();
             
-            if(correct) {
+            const pts = { mudah: 10, sedang: 25, sulit: 50 }[lvl];
+            const dmg = { mudah: 10, sedang: 20, sulit: 30 }[lvl];
+
+            if(isCorrect) {
                 gState.scores[source] += pts;
                 gState.hp[target] = Math.max(0, gState.hp[target] - dmg);
+                tEl.animate([
+                    { transform: 'translateX(0px) scale(1)' },
+                    { transform: 'translateX(20px) scale(0.95)', filter: 'brightness(2)' },
+                    { transform: 'translateX(0px) scale(1)' }
+                ], { duration: 300 });
             } else {
                 gState.hp[source] = Math.max(0, gState.hp[source] - (dmg/2));
+                sEl.animate([
+                    { filter: 'grayscale(1) contrast(2)' },
+                    { filter: 'grayscale(0) contrast(1)' }
+                ], { duration: 500 });
             }
 
             updateUI();
             gState.turn = gState.turn === 0 ? 1 : 0;
-            updateTurnUI();
+            updateTurn();
             if(gState.hp[0] <= 0 || gState.hp[1] <= 0) gameOver();
         };
-    }
-
-    function updateTurnUI() {
-        const name = gState.turn === 0 ? document.getElementById('t1-name').value : document.getElementById('t2-name').value;
-        const announcer = document.getElementById('announcer');
-        announcer.innerText = name.toUpperCase() + "_ENGAGED";
-        announcer.style.color = gState.colors[gState.turn];
-        document.getElementById('glow-1').style.opacity = gState.turn === 0 ? '0.4' : '0';
-        document.getElementById('glow-2').style.opacity = gState.turn === 1 ? '0.4' : '0';
     }
 
     function updateUI() {
@@ -603,21 +614,20 @@
         const overlay = document.createElement('div');
         overlay.className = "fixed inset-0 z-[1000] bg-slate-950/95 flex items-center justify-center p-8 backdrop-blur-3xl";
         overlay.innerHTML = `
-            <div class="glass p-16 rounded-[4rem] text-center max-w-xl w-full border-4 shadow-2xl" style="border-color: ${gState.colors[winIdx]}">
-                <p class="font-cyber text-[10px] tracking-[0.6em] text-indigo-400 mb-6 uppercase">Mission Over</p>
-                <h2 class="text-6xl font-cyber mb-12" style="color: ${gState.colors[winIdx]}">${winName.toUpperCase()}</h2>
+            <div class="glass p-16 rounded-[4rem] text-center max-w-2xl w-full border-2" style="border-color: ${gState.colors[winIdx]}">
+                <p class="font-cyber text-[10px] tracking-[1em] text-indigo-400 mb-8 uppercase">Neural Match Concluded</p>
+                <h2 class="text-6xl font-cyber mb-12" style="color: ${gState.colors[winIdx]}">${winName} WINS</h2>
                 <div class="flex justify-around mb-12 text-3xl font-bold opacity-30 font-cyber">
-                    <div>${gState.scores[0]}<br><span class="text-[10px]">P1_SCORE</span></div>
-                    <div>VS</div>
-                    <div>${gState.scores[1]}<br><span class="text-[10px]">P2_SCORE</span></div>
+                    <div>${gState.scores[0]}<br><span class="text-[10px]">UNIT_A</span></div>
+                    <div>${gState.scores[1]}<br><span class="text-[10px]">UNIT_B</span></div>
                 </div>
-                <button onclick="location.reload()" class="w-full bg-white text-slate-900 font-cyber py-5 rounded-3xl hover:bg-indigo-50 transition-all font-bold tracking-[0.2em]">RELOAD_INTERFACE</button>
+                <button onclick="location.reload()" class="w-full bg-white text-slate-950 font-cyber py-5 rounded-[2.5rem] hover:bg-indigo-50 transition-all font-bold tracking-[0.4em] text-lg">REBOOT INTERFACE</button>
             </div>
         `;
         document.body.appendChild(overlay);
     }
 
-    window.onload = initScene;
+    window.onload = initGalaxy;
 </script>
 </body>
 </html>
